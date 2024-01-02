@@ -10,13 +10,15 @@ repositories {
 }
 
 dependencies {
+    implementation "org.apache.logging.log4j:log4j-slf4j2-impl:2.22.0"
+
     implementation asm("asm")
     implementation asm("asm-analysis")
     implementation asm("asm-commons")
     implementation asm("asm-tree")
     implementation asm("asm-util")
 
-    implementation "cn.hutool:hutool-all:5.8.20"
+    implementation 'cn.hutool:hutool-all:5.8.24'
     implementation "com.alibaba.fastjson2:fastjson2:2.0.29"
     implementation "com.google.code.gson:gson:2.10"
 
@@ -24,19 +26,14 @@ dependencies {
     implementation 'com.itextpdf:font-asian:8.0.1'
     implementation "org.freemarker:freemarker:${freemarker_version}"
 
-//    implementation 'com.documents4j:documents4j-local:1.1.12'
-//    implementation 'com.documents4j:documents4j-transformer-msoffice-word:1.1.12'
-
     implementation 'org.docx4j:docx4j-export-fo:11.4.9'
     implementation 'org.docx4j:docx4j-JAXB-ReferenceImpl:11.4.9'
 
-//    implementation 'com.itextpdf:itextpdf:5.5.13.3'
-//    implementation 'com.itextpdf:itext-asian:5.2.0'
     implementation 'cn.afterturn:easypoi-base:4.4.0'
     implementation 'cn.afterturn:easypoi-annotation:4.4.0'
 
-//    implementation 'org.glassfish.jaxb:jaxb-runtime:4.0.4'
-
+    implementation "mysql:mysql-connector-java:8.0.31"
+    implementation 'com.zaxxer:HikariCP:5.1.0'
 
     compileOnly "org.projectlombok:lombok:${lombok_version}"
     testCompileOnly "org.projectlombok:lombok:${lombok_version}"
