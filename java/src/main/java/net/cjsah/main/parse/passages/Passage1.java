@@ -1,10 +1,15 @@
-package net.cjsah.main.parse;
+package net.cjsah.main.parse.passages;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.cjsah.sql.HikariSql;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -12,11 +17,23 @@ import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Passages {
-    public static boolean passage(List<XWPFParagraph> paragraphs, String filename) {
+@Slf4j
+public class Passage1 {
+
+    public static void main(String[] args) {
+        File file = new File("passage/test1.docx");
+        try (FileInputStream fis = new FileInputStream(file); XWPFDocument document = new XWPFDocument(fis)) {
+            Passage1.parse(document, file.getPath());
+        } catch (IOException e) {
+            log.error("err", e);
+        }
+
+    }
+    public static boolean parse(XWPFDocument document, String filename) {
+        Passage.answers = "";
         List<Passage> passages = new ArrayList<>();
         Passage passage = new Passage();
-        for (XWPFParagraph paragraph : paragraphs) {
+        for (XWPFParagraph paragraph : document.getParagraphs()) {
             for (String s : paragraph.getParagraphText().split("\n")) {
                 String trim = s.trim();
                 if (trim.isEmpty()) continue;
@@ -31,7 +48,7 @@ public class Passages {
             }
         }
         for (Passage psg : passages) {
-            HikariSql.insert(filename, psg.id, psg.wordCount, psg.content, psg.questions, Passage.answers);
+            HikariSql.insert(filename, psg.id, psg.wordCount, psg.difficulty, psg.content, psg.questions, Passage.answers, "");
             return true;
         }
         return false;
@@ -41,6 +58,7 @@ public class Passages {
     static class Passage {
         int id;
         int wordCount;
+        int difficulty;
         String content = "";
         String questions = "";
         String words = "";
@@ -57,6 +75,7 @@ public class Passages {
 
     static final Pattern COUNT_PATTERN = Pattern.compile("单词数：\\d+");
     static final Pattern ID_PATTERN = Pattern.compile("编号：\\d+");
+    static final Pattern DIFFICULTY_PATTERN = Pattern.compile("本次文章词汇难度值：\\d+");
 
     private static Stage parseFirstStage(Line line, Stage now) {
         if (line.trim.startsWith("答案")) {
@@ -70,7 +89,7 @@ public class Passages {
 
     @RequiredArgsConstructor
     enum Stage {
-        COMPLETED(Passages::parseFirstStage, (passage, line) -> {}),
+        COMPLETED(Passage1::parseFirstStage, (passage, line) -> {}),
 
         COMPLETE((next, now) -> COMPLETED, (passage, line) -> {}),
 
@@ -93,7 +112,15 @@ public class Passages {
             }
         }),
 
-        WAIT_START((next, now) -> next.trim.startsWith("Passage") ? MSG : now, (passage, line) -> {});
+        WAIT_PASSAGE((next, now) -> next.trim.startsWith("Passage") ? MSG : now, (passage, line) -> {}),
+
+        WAIT_START((next, now) -> now, (passage, line) -> {
+            Matcher matcher = DIFFICULTY_PATTERN.matcher(line.trim);
+            if (matcher.find()) {
+                passage.difficulty = Integer.parseInt(matcher.group().split("：")[1]);
+                passage.stage = WAIT_PASSAGE;
+            }
+        });
 
         final BiFunction<Line, Stage, Stage> next;
         final BiConsumer<Passage, Line> parse;

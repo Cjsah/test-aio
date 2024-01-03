@@ -34,17 +34,19 @@ public class HikariSql {
         dataSource = new HikariDataSource(hikariConfig);
     }
 
-    public static void insert(String filename, long id, int count, String content, String questions, String answers) {
+    public static void insert(String filename, long id, int count, int difficulty, String content, String questions, String answers, String translate) {
         try {
             Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("insert into `passage_1`(`create_time`, `passage_id`, `word_count`, `content`, `questions`, `answers`, `file`) values (?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("insert into `passage_1`(`create_time`, `passage_id`, `word_count`, `difficulty`, `content`, `questions`, `answers`, `file`, `translate`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             preparedStatement.setString(1, date());
             preparedStatement.setLong(2, id);
             preparedStatement.setInt(3, count);
-            preparedStatement.setString(4, content);
-            preparedStatement.setString(5, questions);
-            preparedStatement.setString(6, answers);
-            preparedStatement.setString(7, filename);
+            preparedStatement.setInt(4, difficulty);
+            preparedStatement.setString(5, content);
+            preparedStatement.setString(6, questions);
+            preparedStatement.setString(7, answers);
+            preparedStatement.setString(8, filename);
+            preparedStatement.setString(9, translate);
             preparedStatement.execute();
         } catch (SQLException e) {
             log.error("Insert Error", e);
