@@ -3,12 +3,14 @@ package net.cjsah.util;
 import cn.hutool.core.stream.CollectorUtil;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 
 public class StringUtil {
@@ -100,5 +102,16 @@ public class StringUtil {
 
     }
 
+    public static boolean match(String value, Pattern... patterns) {
+        return Arrays.stream(patterns).parallel().anyMatch(it -> it.matcher(value).find());
+    }
+
+    public static boolean contains(String value, String... patterns) {
+        return Arrays.stream(patterns).anyMatch(value::contains);
+    }
+
+    public static boolean starts(String value, String... patterns) {
+        return Arrays.stream(patterns).anyMatch(value::startsWith);
+    }
 
 }

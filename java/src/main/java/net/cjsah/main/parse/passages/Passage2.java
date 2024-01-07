@@ -4,15 +4,18 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.sql.HikariSql;
+import net.cjsah.util.JsonUtil;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -29,7 +32,7 @@ public class Passage2 {
         File file = new File("passage/test2.docx");
         try (FileInputStream fis = new FileInputStream(file); XWPFDocument document = new XWPFDocument(fis)) {
             Passage2.parse(document, file.getPath());
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("err", e);
         }
 
@@ -42,41 +45,68 @@ public class Passage2 {
             if (passage.index == index) return passage;
         }
         Passage passage = new Passage();
+        passage.index = index;
         list.add(passage);
         return passage;
     }
 
-    public static boolean parse(XWPFDocument document, String filename) {
+    public static boolean parse(XWPFDocument document, String filename) throws Exception {
         stage = Stage.WAIT_START;
         difficulty = 0;
         answers = "";
-        for (XWPFTable table : document.getTables()) {
-            System.out.println(table);
-
-        }
+        list.clear();
+        nowPassage = null;
         for (XWPFParagraph paragraph : document.getParagraphs()) {
             for (String s : paragraph.getParagraphText().split("\n")) {
                 String trim = s.trim();
                 if (trim.isEmpty()) continue;
                 Line line = new Line(s, trim);
-                System.out.println(line.origin);
-
-//                passage.stage = passage.stage.next.apply(line, passage.stage);
-//                if (passage.stage == Stage.COMPLETE) {
-//                    passages.add(passage);
-//                    passage = new Passage();
-//                    passage.stage = Stage.COMPLETED;
-//                }
-//                passage.stage.parse.accept(passage, line);
+                stage = stage.next.apply(line, stage);
+                stage.parse.accept(line);
             }
         }
-        System.out.println(list);
-        for (Passage psg : list) {
-            HikariSql.insert(filename, psg.id, psg.wordCount, difficulty, psg.content, psg.questions, answers, psg.translate);
-            return true;
+        List<XWPFTable> tables = document.getTables();
+        parseTable(getOrCreate(1), tables.get(0));
+        parseTable(getOrCreate(2), tables.get(1));
+        if (list.isEmpty()) {
+            throw new Exception("Empty Passage");
         }
-        return false;
+        for (Passage psg : list) {
+            HikariSql.insert(filename, psg.id, psg.wordCount, difficulty, psg.content, JsonUtil.obj2Str(psg.questions), answers, psg.translate, JsonUtil.obj2Str(psg.words));
+        }
+        return true;
     }
+
+    private static void parseTable(Passage passage, XWPFTable table) {
+        XWPFTableRow row = table.getRow(0);
+        XWPFTableCell content = row.getCell(0);
+        XWPFTableCell words = row.getCell(1);
+
+        TableStage stage = TableStage.CONTENT;
+
+        for (XWPFParagraph paragraph : content.getParagraphs()) {
+            String text = paragraph.getParagraphText();
+            String trim = text.trim();
+            Line line = new Line(text, trim);
+            stage = stage.next.apply(line, stage);
+            stage.parse.accept(passage, line);
+        }
+        for (XWPFParagraph paragraph : words.getParagraphs()) {
+            passage.words.add(paragraph.getParagraphText());
+        }
+    }
+
+    @RequiredArgsConstructor
+    enum TableStage {
+
+        QUESTION((next, now) -> now, (passage, line) -> passage.questions.add(line.origin)),
+
+        CONTENT((next, now) -> next.trim.startsWith("郑重提示") ? QUESTION: now, (passage, line) -> passage.content += line.origin + "\n");
+
+        final BiFunction<Line, TableStage, TableStage> next;
+        final BiConsumer<Passage, Line> parse;
+    }
+
 
     @Data
     static class Passage {
@@ -84,11 +114,9 @@ public class Passage2 {
         int id;
         int wordCount;
         String content = "";
-        String questions = "";
-        String words = "";
+        List<String> questions = new ArrayList<>();
+        List<String> words = new ArrayList<>();
         String translate = "";
-
-        Stage stage = Stage.WAIT_START;
     }
 
     @Data
@@ -102,21 +130,11 @@ public class Passage2 {
     static final Pattern ID_PATTERN = Pattern.compile("本篇编号：\\d+");
     static final Pattern DIFFICULTY_PATTERN = Pattern.compile("本次文章词汇难度值\\d+");
 
-    private static Stage parseFirstStage(Line line, Stage now) {
-        if (line.trim.startsWith("答案")) {
-            return Stage.ANSWER;
-        } else if (now == Stage.COMPLETED && line.trim.startsWith("Passage")) {
-            return Stage.CONTENT;
-        } else {
-            return now;
-        }
-    }
-
     @RequiredArgsConstructor
     enum Stage {
-        COMPLETED(Passage2::parseFirstStage, line -> {}),
+        COMPLETED((next, now) -> now, line -> {}),
 
-        TRANSLATE((next, now) -> now, line -> {
+        TRANSLATE((next, now) -> next.trim.contains("分层周计划训练") ? COMPLETED : now, line -> {
             if (line.trim.startsWith("Passage ")) {
                 Matcher matcher = PASSAGE_PATTERN.matcher(line.trim);
                 if (matcher.find()) {
@@ -129,9 +147,12 @@ public class Passage2 {
 
         }),
 
-        ANSWER((next, now) -> next.trim.startsWith("答案和解析") ? TRANSLATE: now, line -> answers += line.origin + "\n"),
+        WAIT_TRANSLATE((next, now) -> next.trim.startsWith("全文参考译文") ? TRANSLATE: now, line -> {}),
+        ANSWER((next, now) -> next.trim.startsWith("难句翻译参考译文") ? WAIT_TRANSLATE: now, line -> answers += line.origin + "\n"),
 
-        CONTENT((next, now) -> next.trim.startsWith("答案和解析") ? ANSWER: now, line -> {
+        WAIT_ANSWER((next, now) -> next.trim.startsWith("答案和解析") ? ANSWER: now, line -> {}),
+
+        CONTENT((next, now) -> next.trim.startsWith("请翻译并熟读下列句子") ? WAIT_ANSWER: now, line -> {
             if (line.trim.startsWith("Passage ")) {
                 Matcher matcher = PASSAGE_PATTERN.matcher(line.trim);
                 if (matcher.find()) {

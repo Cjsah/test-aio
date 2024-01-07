@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.Properties;
 
 @Slf4j
 public class HikariSql {
@@ -20,24 +19,23 @@ public class HikariSql {
     private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     static {
-        Properties properties = new Properties();
-        properties.setProperty("jdbcUrl", "jdbc:mysql://192.168.0.10:3306/passage");
-        properties.setProperty("username", "root");
-        properties.setProperty("password", "mysql");
-        properties.setProperty("poolName", "Hikari");
-        properties.setProperty("maximumPoolSize", "20");
-        properties.setProperty("minimumIdle", "1");
-        properties.setProperty("connectionTimeout", "30000");
-        properties.setProperty("idleTimeout", "600000");
-        properties.setProperty("maxLifetime", "1800000");
-        HikariConfig hikariConfig = new HikariConfig(properties);
-        dataSource = new HikariDataSource(hikariConfig);
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://192.168.0.10:3306/passage?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
+        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        dataSource.setUsername("root");
+        dataSource.setPassword("mysql");
+        dataSource.setIdleTimeout(60000);
+        dataSource.setAutoCommit(true);
+        dataSource.setMaximumPoolSize(20);
+        dataSource.setMinimumIdle(1);
+        dataSource.setMaxLifetime(600000);
+        dataSource.setConnectionTimeout(30000);
+        dataSource.setConnectionTestQuery("SELECT 1");
     }
 
-    public static void insert(String filename, long id, int count, int difficulty, String content, String questions, String answers, String translate) {
-        try {
-            Connection connection = dataSource.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("insert into `passage_1`(`create_time`, `passage_id`, `word_count`, `difficulty`, `content`, `questions`, `answers`, `file`, `translate`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    public static boolean insert(String filename, long id, int count, int difficulty, String content, String questions, String answers, String translate, String words) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement("insert into `passage_1a`(`create_time`, `passage_id`, `word_count`, `difficulty`, `content`, `questions`, `answers`, `file`, `translate`, `words`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             preparedStatement.setString(1, date());
             preparedStatement.setLong(2, id);
             preparedStatement.setInt(3, count);
@@ -47,9 +45,9 @@ public class HikariSql {
             preparedStatement.setString(7, answers);
             preparedStatement.setString(8, filename);
             preparedStatement.setString(9, translate);
+            preparedStatement.setString(10, words);
             preparedStatement.execute();
-        } catch (SQLException e) {
-            log.error("Insert Error", e);
+            return true;
         }
     }
 
