@@ -3,12 +3,10 @@ package net.cjsah.main.parse;
 import cn.hutool.core.io.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.cjsah.main.parse.passages.Passage2;
 import net.cjsah.util.StringUtil;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
