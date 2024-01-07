@@ -39,4 +39,15 @@ public class PassageTotal  implements Serializable {
         this.words = passage.words;
     }
 
+    public <T extends Passage> void from(T passage) {
+        this.passageId = passage.passageId;
+        this.wordCount = passage.wordCount;
+        this.difficulty = passage.difficulty;
+        this.content = passage.content;
+        this.questions = passage.questions;
+        this.file = passage.file;
+        this.translate = passage.translate;
+        this.words = "";
+    }
+
 }
