@@ -18,3 +18,4 @@ insert into passage_2a select * from passage_1a;
 truncate passage_4;
 insert into passage_4 select * from passage_3;
 
+alter table passage_total add column `word_range` varchar(255) not null default '[]' comment '词汇量范围';

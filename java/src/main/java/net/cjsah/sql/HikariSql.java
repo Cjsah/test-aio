@@ -2,15 +2,18 @@ package net.cjsah.sql;
 
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.slf4j.Slf4j;
+import net.cjsah.util.JsonUtil;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Slf4j
 public class HikariSql {
@@ -49,6 +52,45 @@ public class HikariSql {
             return true;
         }
     }
+
+    public static boolean update(long id, int wordCount) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement("select word_range wr from passage_total where passage_id = ?");
+            preparedStatement.setLong(1, id);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                String range = resultSet.getString("wr");
+                List<Integer> list = JsonUtil.str2List(range, int.class);
+                boolean change = false;
+                if (list.isEmpty()) {
+                    list.add(wordCount);
+                    list.add(wordCount);
+                    change = true;
+                } else if (wordCount < list.get(0)) {
+                    list.set(0, wordCount);
+                    change = true;
+                } else if (wordCount > list.get(1)) {
+                    list.set(1, wordCount);
+                    change = true;
+                }
+                range = JsonUtil.obj2Str(list);
+                resultSet.close();
+                preparedStatement.close();
+
+                if (change) {
+                    preparedStatement = connection.prepareStatement("update passage_total set word_range = ? where passage_id = ?");
+                    preparedStatement.setString(1, range);
+                    preparedStatement.setLong(2, id);
+                    preparedStatement.execute();
+                }
+                return true;
+            }
+
+            return false;
+
+        }
+    }
+
 
     private static String date() {
         LocalDateTime ldt = LocalDateTime.now();

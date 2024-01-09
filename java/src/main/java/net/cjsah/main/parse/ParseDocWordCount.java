@@ -3,10 +3,13 @@ package net.cjsah.main.parse;
 import cn.hutool.core.io.FileUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.cjsah.main.parse.passages.Passage1Word;
+import net.cjsah.main.parse.passages.Passage2Word;
 import net.cjsah.util.StringUtil;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -18,7 +21,7 @@ public class ParseDocWordCount {
     static int completeCount = 0;
 
     public static void main(String[] args) {
-        File file = new File("分层周计划训练");
+        File file = new File("/Users/cjsah/Desktop/文章库");
 
         try {
             travel(file);
@@ -61,27 +64,22 @@ public class ParseDocWordCount {
                             }
                         }
 
-                        if (parseType == ParseType.PASS) {
-                            log.info("正则删除[{}]", file.getPath());
+                        boolean bl = false;
+                        try (FileInputStream fis = new FileInputStream(file)) {
+
+                            XWPFDocument document = new XWPFDocument(fis);
+                            bl = parseType.parser.run(document, file.getPath());
+                            if (!bl) {
+                                log.error("[{}][{}]解析失败...", file.getPath(), parseType);
+                            }
+                        } catch (Exception e) {
+                            log.error(file.getPath() + "解析失败...", e);
+                        }
+                        if (bl) {
+                            completeCount++;
+                            log.info("[{}]解析完成, 正在删除...", file.getPath());
                             del(file);
                         }
-
-//                        boolean bl = false;
-//                        try (FileInputStream fis = new FileInputStream(file)) {
-//
-//                            XWPFDocument document = new XWPFDocument(fis);
-//                            bl = parseType.parser.run(document, file.getPath());
-//                            if (!bl) {
-//                                log.error("[{}][{}]解析失败...", file.getPath(), parseType);
-//                            }
-//                        } catch (Exception e) {
-//                            log.error(file.getPath() + "解析失败...", e);
-//                        }
-//                        if (bl) {
-//                            completeCount++;
-//                            log.info("[{}]解析完成, 正在删除...", file.getPath());
-//                            del(file);
-//                        }
                     } else {
                         log.warn("未知的文档类型: {}", file.getPath());
                     }
@@ -105,34 +103,11 @@ public class ParseDocWordCount {
         }
     }
 
-    static final Pattern PASSAGE1_REGEX = Pattern.compile("入学摸底.*");
-    static final Pattern NUMBER_REGEX = Pattern.compile("\\d+");
-
     @RequiredArgsConstructor
     enum ParseType {
         NONE(name -> false, (list, file) -> false),
-        PASS(name -> StringUtil.contains(name, "反馈表", "对照表", "筛查表", "作文") ||
-                StringUtil.starts(name,
-                        "词汇作业",
-                        "书法训练",
-                        "语感训练",
-                        "词汇训练",
-                        "题型特训",
-                        "语法训练",
-                        "句型转换",
-                        "语法作业",
-                        "高频生词训练",
-                        "临考词汇突击",
-                        "单元全词汇训练",
-                        "选项答题表",
-                        "专题特训-音标"
-                ) ||
-                StringUtil.match(name, PASSAGE1_REGEX, NUMBER_REGEX), (doc, file) -> false),
-        P2(name -> StringUtil.starts(name, "分层周计划训练"), (doc, file) -> false),
-        P3(name -> StringUtil.contains(name, "七选五"), (doc, file) -> false/*Passage3::parse*/),
-        W1(name -> StringUtil.contains(name, "完形填空"), (doc, file) -> false),
-
-        P1(name -> StringUtil.contains(name, "阅读"), (doc, file) -> false);
+        P2(name -> StringUtil.starts(name, "分层周计划训练"), (doc, file) -> new Passage2Word().parse(doc, file)),
+        P1(name -> StringUtil.contains(name, "阅读"), (doc, file) -> new Passage1Word().parse(doc, file));
 
         final Predicate<String> predicate;
         final BiFunction parser;
