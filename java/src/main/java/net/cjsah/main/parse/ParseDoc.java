@@ -20,7 +20,7 @@ public class ParseDoc {
     static int completeCount = 0;
 
     public static void main(String[] args) {
-        File file = new File("/Users/cjsah/Desktop/文章库");
+        File file = new File("英语学案");
 
         try {
             travel(file);
@@ -45,7 +45,7 @@ public class ParseDoc {
                         travel(file);
                     }
                 } else if (name.startsWith("._") || name.startsWith("~$")) {
-                    log.info("正则删除[{}]", file.getPath());
+                    log.info("正在删除[{}]", file.getPath());
                     del(file);
                 } else if (name.endsWith(".docx")) {
                     Matcher matcher = DOC_REGEX.matcher(name);
@@ -80,12 +80,15 @@ public class ParseDoc {
 //                            del(file);
 //                        }
                         if (parseType == ParseType.PASS) {
-                            log.info("正则删除[{}]", file.getPath());
+                            log.info("正在删除[{}]", file.getPath());
                             del(file);
                         }
 
 
-                    } else {
+                    } else if (ParseType.PASS.predicate.test(name)) {
+                        log.info("正在删除[{}]", file.getPath());
+                        del(file);
+                    } else{
                         log.warn("未知的文档类型: {}", file.getPath());
                     }
 

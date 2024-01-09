@@ -35,7 +35,24 @@ public class HikariSql {
         dataSource.setConnectionTestQuery("SELECT 1");
     }
 
-    public static boolean insert(String filename, long id, int count, int difficulty, String content, String questions, String answers, String translate, String words) throws SQLException {
+    public static boolean insert(String filename, long id, int count, int difficulty, String content, String questions, String answers, String translate) throws SQLException {
+        try (Connection connection = dataSource.getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement("insert into `passage_1`(`create_time`, `passage_id`, `word_count`, `difficulty`, `content`, `questions`, `answers`, `file`, `translate`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            preparedStatement.setString(1, date());
+            preparedStatement.setLong(2, id);
+            preparedStatement.setInt(3, count);
+            preparedStatement.setInt(4, difficulty);
+            preparedStatement.setString(5, content);
+            preparedStatement.setString(6, questions);
+            preparedStatement.setString(7, answers);
+            preparedStatement.setString(8, filename);
+            preparedStatement.setString(9, translate);
+            preparedStatement.execute();
+            return true;
+        }
+    }
+
+    public static boolean insertWords(String filename, long id, int count, int difficulty, String content, String questions, String answers, String translate, String words) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
             PreparedStatement preparedStatement = connection.prepareStatement("insert into `passage_1a`(`create_time`, `passage_id`, `word_count`, `difficulty`, `content`, `questions`, `answers`, `file`, `translate`, `words`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             preparedStatement.setString(1, date());
