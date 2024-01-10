@@ -28,7 +28,7 @@ public class PassageTotalR implements Serializable {
     protected String translate;
     protected String words;
 
-    public <T extends PassageTotal> void from(T passage) {
+    public <T extends PassageTotalT> void from(T passage) {
         this.passageId = passage.passageId;
         this.wordCount = passage.wordCount;
         this.difficulty = passage.difficulty;

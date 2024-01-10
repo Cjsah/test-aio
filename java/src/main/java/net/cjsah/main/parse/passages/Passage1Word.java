@@ -23,6 +23,7 @@ public class Passage1Word {
     Passage current = null;
     Stage stage = Stage.WAIT_START;
     int wordCount = 0;
+    int difficulty = 0;
 
     public static void main(String[] args) {
         File file = new File("passage/test.docx");
@@ -54,7 +55,7 @@ public class Passage1Word {
             throw new Exception("Empty Passage");
         }
         for (Passage psg : passages) {
-            if (!HikariSql.update(psg.id, wordCount)) {
+            if (!HikariSql.update(psg.id, wordCount, difficulty)) {
                 log.error("更新失败, {}不存在", psg.id);
                 return false;
             }
@@ -75,6 +76,7 @@ public class Passage1Word {
 
     static final Pattern ID_PATTERN = Pattern.compile("编号：\\d+");
     static final Pattern WORD_COUNT_PATTERN = Pattern.compile("词汇量：\\d+");
+    static final Pattern DIFFICULTY_PATTERN = Pattern.compile("本次文章词汇难度值：\\d+");
 
     private static Stage parseFirstStage(Line line, Stage now) {
         if (now == Stage.COMPLETED && line.trim.startsWith("Passage")) {
@@ -105,6 +107,10 @@ public class Passage1Word {
             Matcher matcher = WORD_COUNT_PATTERN.matcher(line.trim);
             if (matcher.find()) {
                 passage.wordCount = Integer.parseInt(matcher.group().split("：")[1]);
+            }
+            matcher = DIFFICULTY_PATTERN.matcher(line.trim);
+            if (matcher.find()) {
+                passage.difficulty = Integer.parseInt(matcher.group().split("：")[1]);
                 passage.stage = WAIT_PASSAGE;
             }
         });

@@ -53,36 +53,27 @@ public class HikariSql {
         }
     }
 
-    public static boolean update(long id, int wordCount) throws SQLException {
+    public static boolean update(long id, int wordCount, int difficulty) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement("select word_range wr from passage_total where passage_id = ?");
+            PreparedStatement preparedStatement = connection.prepareStatement("select word_range wr, difficulty dif from passage_total where passage_id = ?");
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
-                String range = resultSet.getString("wr");
-                List<Integer> list = JsonUtil.str2List(range, int.class);
-                boolean change = false;
-                if (list.isEmpty()) {
-                    list.add(wordCount);
-                    list.add(wordCount);
-                    change = true;
-                } else if (wordCount < list.get(0)) {
-                    list.set(0, wordCount);
-                    change = true;
-                } else if (wordCount > list.get(1)) {
-                    list.set(1, wordCount);
-                    change = true;
-                }
-                range = JsonUtil.obj2Str(list);
+                String wordRange = resultSet.getString("wr");
+                String difficultyRange = resultSet.getString("dif");
+                List<Integer> wordList = JsonUtil.str2List(wordRange, int.class);
+                List<Integer> difficultyList = JsonUtil.str2List(difficultyRange, int.class);
+                wordList.add(wordCount);
+                difficultyList.add(difficulty);
+                wordRange = JsonUtil.obj2Str(wordList);
+                difficultyRange = JsonUtil.obj2Str(difficultyList);
                 resultSet.close();
                 preparedStatement.close();
-
-                if (change) {
-                    preparedStatement = connection.prepareStatement("update passage_total set word_range = ? where passage_id = ?");
-                    preparedStatement.setString(1, range);
-                    preparedStatement.setLong(2, id);
-                    preparedStatement.execute();
-                }
+                preparedStatement = connection.prepareStatement("update passage_total set word_range = ? , difficulty = ? where passage_id = ?");
+                preparedStatement.setString(1, wordRange);
+                preparedStatement.setString(2, difficultyRange);
+                preparedStatement.setLong(3, id);
+                preparedStatement.execute();
                 return true;
             }
 
