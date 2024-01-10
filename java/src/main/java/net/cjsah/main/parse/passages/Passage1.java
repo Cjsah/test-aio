@@ -54,7 +54,7 @@ public class Passage1 {
             throw new Exception("Empty Passage");
         }
         for (Passage psg : passages) {
-            HikariSql.insert(filename, psg.id, psg.wordCount, psg.difficulty, psg.content, psg.questions, this.answer, psg.translate);
+            HikariSql.insert(filename, psg.id, psg.wordCount, 0, psg.content, psg.questions, this.answer, psg.translate);
         }
         return true;
     }
