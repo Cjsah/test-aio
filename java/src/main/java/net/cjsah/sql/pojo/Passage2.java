@@ -6,6 +6,6 @@ import lombok.ToString;
 
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
-@TableName("passage_4")
+@TableName("passage_3")
 public class Passage2 extends Passage { }
 

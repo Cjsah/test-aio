@@ -1,4 +1,4 @@
-create table `passage_total` (
+create table `passage_total_b` (
     `id` bigint not null auto_increment comment '访问id',
     `create_time` datetime not null comment '创建时间',
     `passage_id` bigint unsigned not null comment '文章id',
@@ -10,5 +10,5 @@ create table `passage_total` (
     `words` text not null comment '单词',
     `translate` text not null comment '翻译',
     primary key (`id`)
-) comment='处理中的文章-表格';
+) comment='处理中的文章';
 
