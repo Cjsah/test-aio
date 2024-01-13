@@ -48,4 +48,14 @@ public class DocUtil {
             }}));
         }};
     }
+
+    public static R genMark(int num) {
+        return new R() {{
+            this.rPr = genRpr(false, false);
+            this.rPr.getVertAlign().setVal(STVerticalAlignRun.SUPERSCRIPT);
+            this.content.add(new JAXBElement<>(namespace, Text.class, new Text() {{
+                this.value = "[" + num + "]";
+            }}));
+        }};
+    }
 }

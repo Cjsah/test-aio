@@ -62,9 +62,14 @@ public class Main {
             P p = (P) element.getValue().getContent().get(0);
             p.getContent().clear();
 
+            int num = 0;
             for (PassageNode node : results) {
                 R value = DocUtil.genR(node.value, node.bold, node.italic);
                 p.getContent().add(value);
+                if (node.parsed) {
+                    value = DocUtil.genMark(++num);
+                    p.getContent().add(value);
+                }
             }
 
             try (

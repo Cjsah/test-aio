@@ -18,7 +18,7 @@ import java.io.File;
 public class ParseDoc {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Docx4JException {
-        String path = "result.docx";
+        String path = "test.docx";
 
         WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path));
 
