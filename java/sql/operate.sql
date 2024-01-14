@@ -88,3 +88,11 @@ CREATE TABLE passage_total_backup LIKE passage_total;
 insert into passage_total_backup select * from passage_total;
 
 truncate passage_modify;
+
+CREATE TABLE passage_new_backup LIKE passage_new;
+insert into passage_new_backup select * from passage_new;
+
+update passage_new
+set parse = null
+where parse = '';
+
