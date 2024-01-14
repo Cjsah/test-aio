@@ -87,3 +87,4 @@ FROM passage_total t;
 CREATE TABLE passage_total_backup LIKE passage_total;
 insert into passage_total_backup select * from passage_total;
 
+truncate passage_modify;

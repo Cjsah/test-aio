@@ -12,7 +12,6 @@ import net.cjsah.sql.pojo.PassageTotal;
 import net.cjsah.util.JsonUtil;
 import org.apache.ibatis.session.SqlSession;
 
-import javax.swing.text.html.Option;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +51,7 @@ public class ChangeSql {
 
                 builder.setLength(builder.length() - 2);
 
-                String answer = String.join("\n", questions.stream().parallel().map(it -> it.answer).toList());
+                String answer = String.join("\n", questions.stream().parallel().map(it -> it.num + ". " + it.answer).toList());
 
                 List<Integer> abilities = JsonUtil.str2List(passage.getWordRange(), int.class);
                 if (abilities.isEmpty()) {
@@ -70,7 +69,7 @@ public class ChangeSql {
 //                if (true) break;
 
                 int insert = modifyMapper.insert(modified);
-                if (true) break;
+//                if (true) break;
                 if (insert != 0) {
                     totalMapper.deleteById(passage);
                     parsed ++;
