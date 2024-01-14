@@ -50,4 +50,6 @@ public class PassageTotalT implements Serializable {
         this.words = "";
     }
 
+
+
 }
