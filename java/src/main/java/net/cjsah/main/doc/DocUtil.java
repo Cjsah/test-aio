@@ -18,6 +18,8 @@ public class DocUtil {
         return new RPr() {{
             this.rFonts = new RFonts() {{
                 this.hint = STHint.DEFAULT;
+                this.ascii = "Times New Roman";
+                this.hAnsi = "Times New Roman";
             }};
             this.vertAlign = new CTVerticalAlignRun() {{
                 this.val = STVerticalAlignRun.BASELINE;
