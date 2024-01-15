@@ -129,19 +129,31 @@ public class TestWord {
             List<R> passages = new ArrayList<>();
             List<JSONObject> passageWords = new ArrayList<>();
 
-            int num = 0;
+            int index = 0;
             for (PassageNode node : results) {
                 R value = DocUtil.genR(node.value, node.bold, node.italic);
                 passages.add(value);
                 if (node.italic) {
-                    value = DocUtil.genMark(++num);
+                    int num = 0;
+                    for (JSONObject word : passageWords) {
+                        if (node.wordNode.getWord().equals(word.getString("word"))) {
+                            num = word.getIntValue("index");
+                            break;
+                        }
+                    }
+                    if (num == 0) {
+                        num = ++index;
+                    }
+                    value = DocUtil.genMark(num);
                     passages.add(value);
-                    JSONObject word = new JSONObject();
-                    word.put("num", num);
-                    word.put("word", node.wordNode.getWord());
-                    word.put("symbol", node.wordNode.getAmericaPronunciation());
-                    word.put("translate", node.wordNode.getMeaning());
-                    passageWords.add(word);
+                    if (num == index) {
+                        JSONObject word = new JSONObject();
+                        word.put("index", index);
+                        word.put("word", node.wordNode.getWord());
+                        word.put("symbol", node.wordNode.getAmericaPronunciation());
+                        word.put("translate", node.wordNode.getMeaning());
+                        passageWords.add(word);
+                    }
                 }
             }
 
@@ -154,7 +166,6 @@ public class TestWord {
         context.put("spells", spells);
         context.put("passages", articles);
     }
-
 
     public static String htmlToStr(Element element) {
         StringBuilder builder = new StringBuilder();
@@ -199,6 +210,7 @@ public class TestWord {
                     node.substring(word.getWord().length() + index, node.value.length(), nodes);
                     node.substring(index, word.getWord().length() + index, nodes, part -> {
                         consumer.accept(part);
+                        part.wordNode = word;
                         part.parsed = true;
                     });
                     node.substring(0, index, nodes);
