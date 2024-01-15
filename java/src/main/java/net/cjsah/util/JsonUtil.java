@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class JsonUtil {
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
@@ -43,5 +44,8 @@ public class JsonUtil {
         return data;
     }
 
+    public static <T> List<T> jsonGetList(JSONObject json, String key, Function<JSONObject, T> function) {
+        return ListUtil.map(json.getJSONArray(key), it -> function.apply((JSONObject) it));
+    }
 
 }
