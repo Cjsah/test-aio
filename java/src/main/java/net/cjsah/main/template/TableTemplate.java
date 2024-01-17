@@ -106,9 +106,9 @@ public class TableTemplate {
         Tbl passageTable = (Tbl) finder.results.get(0);
         parsePassageTranslate(passageTable, (List<JSONObject>) passage.get("words"));
 
-        P p = getTrContent(tr);
-        p.getContent().clear();
-        p.getContent().addAll((List<?>) passage.get("passages"));
+        List<Object> content = (((JAXBElement<Tc>) tr.getContent().get(0)).getValue()).getContent();
+        content.clear();
+        content.addAll((List<?>) passage.get("passage"));
     }
 
     public static void parsePassageTranslate(Tbl table, List<JSONObject> words) throws JAXBException {

@@ -6,18 +6,22 @@ import com.alibaba.fastjson2.JSONObject;
 import com.itextpdf.styledxmlparser.jsoup.Jsoup;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Element;
 import com.itextpdf.styledxmlparser.jsoup.nodes.TextNode;
+import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.Article;
 import net.cjsah.data.WordNode;
 import net.cjsah.main.doc.DocUtil;
 import net.cjsah.util.JsonUtil;
+import net.sf.jsqlparser.statement.select.First;
 import org.docx4j.TraversalUtil;
 import org.docx4j.finders.ClassFinder;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
+import org.docx4j.wml.P;
 import org.docx4j.wml.R;
 import org.docx4j.wml.Tbl;
+import org.docx4j.wml.Text;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -44,7 +48,6 @@ public class TestWord {
         String path = "./math/template/";
 
         try {
-
             JSONObject context = new JSONObject();
             getContext(context);
 
@@ -70,7 +73,6 @@ public class TestWord {
 
             try (FileOutputStream fos = new FileOutputStream(path + "result.docx")) {
                 wordMLPackage.save(fos);
-
             }
 
         }catch (Exception e) {
@@ -78,6 +80,7 @@ public class TestWord {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static void getContext(JSONObject context) {
         String jsonStr = FileUtil.readString(new File("article.json"), StandardCharsets.UTF_8);
         JSONObject json = JsonUtil.str2Obj(jsonStr, JSONObject.class);
@@ -117,22 +120,30 @@ public class TestWord {
             map.put("num", article.getId());
             map.put("difficulty", -1); // TODO 未知数据
             map.put("count", -1); // TODO 未知数据
-            String passage = "<html><body>" + article.getTitle() + "</body></html>";
+            String passage = "<html><body>" + article.getTitle().replace('\r', '\n') + "</body></html>";
             Element body = Jsoup.parse(passage).body();
             passage = htmlToStr(body);
             PassageNode passageNode = new PassageNode(passage);
             List<PassageNode> results = parsePassage(new ArrayList<>() {{
                 this.add(passageNode);
             }}, studyWords, node -> node.bold = true);
+            results = parsePassage(results, Collections.singletonList(new WordNode("\n")), node -> node.nextLine = true);
             results = parsePassage(results, overWords, node -> node.italic = true);
 
-            List<R> passages = new ArrayList<>();
+            List<P> passages = new ArrayList<>();
             List<JSONObject> passageWords = new ArrayList<>();
+            P p = DocUtil.genP();
+            passages.add(p);
 
             int index = 0;
             for (PassageNode node : results) {
+                if (node.nextLine) {
+                    p = DocUtil.genP();
+                    passages.add(p);
+                    continue;
+                }
                 R value = DocUtil.genR(node.value, node.bold, node.italic);
-                passages.add(value);
+                p.getContent().add(value);
                 if (node.italic) {
                     int num = 0;
                     for (JSONObject word : passageWords) {
@@ -145,7 +156,7 @@ public class TestWord {
                         num = ++index;
                     }
                     value = DocUtil.genMark(num);
-                    passages.add(value);
+                    p.getContent().add(value);
                     if (num == index) {
                         JSONObject word = new JSONObject();
                         word.put("index", index);
@@ -157,7 +168,22 @@ public class TestWord {
                 }
             }
 
-            map.put("passages", passages);
+            for (P node : passages) {
+                while (!node.getContent().isEmpty()) {
+                    Text text = ((JAXBElement<Text>) ((R) node.getContent().get(0)).getContent().get(0)).getValue();
+                    String value = text.getValue();
+                    if (value.trim().isEmpty()) {
+                        node.getContent().remove(0);
+                    } else {
+                        text.setValue(value.stripLeading());
+                        break;
+                    }
+                }
+
+            }
+
+            passages = passages.stream().parallel().filter(it -> !it.getContent().isEmpty()).toList();
+            map.put("passage", passages);
             map.put("words", passageWords);
             articles.add(map);
         }
@@ -252,6 +278,7 @@ public class TestWord {
         boolean bold;
         boolean italic;
         boolean parsed;
+        boolean nextLine;
         WordNode wordNode;
 
         public PassageNode(String value) {
@@ -259,6 +286,7 @@ public class TestWord {
             this.bold = false;
             this.italic = false;
             this.parsed = false;
+            this.nextLine = false;
         }
 
         public void substring(int from, int to, List<PassageNode> append) {

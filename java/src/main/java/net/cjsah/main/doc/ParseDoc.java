@@ -13,12 +13,14 @@ import org.docx4j.wml.Tc;
 import org.docx4j.wml.Tr;
 
 import java.io.File;
+import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 public class ParseDoc {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Docx4JException {
-        String path = "result.docx";
+        String path = "./math/template/result.docx";
 
         WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path));
 
@@ -28,10 +30,19 @@ public class ParseDoc {
 
         log.info("查找到{}个表格", finder.results.size());
 
-        Tbl table = (Tbl) finder.results.get(0);
+        Tbl table = (Tbl) finder.results.get(finder.results.size() - 4);
+
+        finder.results.clear();
+        new TraversalUtil(table.getContent(), finder);
+        log.info("查找到{}个表格", finder.results.size());
+
+        table = (Tbl) finder.results.get(0);
+
         Tr tr = (Tr) (table).getContent().get(0);
+
         JAXBElement<Tc> element = (JAXBElement<Tc>) tr.getContent().get(0);
-        P p = (P) element.getValue().getContent().get(0);
+
+        List<Object> p = element.getValue().getContent();
 
         System.out.println(p);
     }
