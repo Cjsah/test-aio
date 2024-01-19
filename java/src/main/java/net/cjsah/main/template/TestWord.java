@@ -129,8 +129,8 @@ public class TestWord {
             PassageNode passageNode = new PassageNode(passage);
             List<PassageNode> results = parsePassage(new ArrayList<>() {{
                 this.add(passageNode);
-            }}, studyWords, node -> node.bold = true);
-            results = parsePassage(results, Collections.singletonList(new WordNode("\n")), node -> node.nextLine = true);
+            }}, Collections.singletonList(new WordNode("\n")), node -> node.nextLine = true);
+            results = parsePassage(results, studyWords, node -> node.bold = true);
             results = parsePassage(results, overWords, node -> node.italic = true);
 
             List<P> passages = new ArrayList<>();
