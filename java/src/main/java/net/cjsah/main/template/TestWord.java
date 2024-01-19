@@ -3,17 +3,14 @@ package net.cjsah.main.template;
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import com.itextpdf.styledxmlparser.jsoup.Jsoup;
-import com.itextpdf.styledxmlparser.jsoup.nodes.Element;
-import com.itextpdf.styledxmlparser.jsoup.nodes.TextNode;
 import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.Article;
+import net.cjsah.data.SubQuestion;
 import net.cjsah.data.WordNode;
 import net.cjsah.main.doc.DocUtil;
 import net.cjsah.util.JsonUtil;
-import net.sf.jsqlparser.statement.select.First;
 import org.docx4j.TraversalUtil;
 import org.docx4j.finders.ClassFinder;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -29,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.IllegalFormatFlagsException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -61,6 +57,9 @@ public class TestWord {
             Tbl spellTable = (Tbl) finder.results.get(2);
             Tbl passageTable = (Tbl) finder.results.get(3);
 
+            Tbl answerTable = (Tbl) finder.results.get(6);
+            Tbl translateTable = (Tbl) finder.results.get(7);
+
             List<JSONObject> words = (List<JSONObject>) context.get("words");
             List<String> spells = (List<String>) context.get("spells");
             List<JSONObject> passages = (List<JSONObject>) context.get("passages");
@@ -68,6 +67,8 @@ public class TestWord {
             TableTemplate.parseWords(wordsTable, words);
             TableTemplate.parseSpell(spellTable, spells);
             TableTemplate.parsePassage(passageTable, passages);
+            TableTemplate.parseAnswer(answerTable, passages);
+            TableTemplate.parseTranslate(translateTable, passages);
 
 //            if (true) return;
 
@@ -88,10 +89,12 @@ public class TestWord {
         JSONArray questions = json.getJSONArray("questions");
         JSONArray wordsArray = json.getJSONArray("words");
         JSONArray overWordsArray = json.getJSONArray("overWords");
+        JSONArray subQuestions = json.getJSONArray("subquestions");
 
         List<WordNode> studyWords = wordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<WordNode> overWords = overWordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<Article> articlesData = questions.stream().parallel().map(it -> Article.fromJson((JSONObject) it)).toList();
+        List<SubQuestion> subQuestionData = subQuestions.stream().parallel().map(it -> SubQuestion.fromJson((JSONObject) it)).toList();
 
         List<JSONObject> words = new ArrayList<>();
         List<JSONObject> articles = new ArrayList<>();
@@ -118,11 +121,11 @@ public class TestWord {
             JSONObject map = new JSONObject();
             map.put("index", i + 1);
             map.put("num", article.getId());
-            map.put("difficulty", -1); // TODO 未知数据
             map.put("count", -1); // TODO 未知数据
-            String passage = "<html><body>" + article.getTitle().replace('\r', '\n') + "</body></html>";
-            Element body = Jsoup.parse(passage).body();
-            passage = htmlToStr(body);
+            map.put("answers", DocUtil.parseHtml(article.getParse(), false));
+            map.put("translate", Collections.emptyList()); // TODO 目前留空
+
+            String passage = DocUtil.htmlToStr(article.getTitle());
             PassageNode passageNode = new PassageNode(passage);
             List<PassageNode> results = parsePassage(new ArrayList<>() {{
                 this.add(passageNode);
@@ -132,13 +135,13 @@ public class TestWord {
 
             List<P> passages = new ArrayList<>();
             List<JSONObject> passageWords = new ArrayList<>();
-            P p = DocUtil.genP();
+            P p = DocUtil.genP(true);
             passages.add(p);
 
             int index = 0;
             for (PassageNode node : results) {
                 if (node.nextLine) {
-                    p = DocUtil.genP();
+                    p = DocUtil.genP(true);
                     passages.add(p);
                     continue;
                 }
@@ -162,7 +165,7 @@ public class TestWord {
                         word.put("index", index);
                         word.put("word", node.wordNode.getWord());
                         word.put("symbol", node.wordNode.getAmericaPronunciation());
-                        word.put("translate", node.wordNode.getMeaning());
+                        word.put("translate", node.wordNode.getMeaning().replace("<br>", ""));
                         passageWords.add(word);
                     }
                 }
@@ -182,7 +185,13 @@ public class TestWord {
 
             }
 
-            passages = passages.stream().parallel().filter(it -> !it.getContent().isEmpty()).toList();
+            passages = passages.stream().parallel().filter(it -> !it.getContent().isEmpty()).collect(Collectors.toList());
+            List<SubQuestion> questionList = subQuestionData.stream().parallel().filter(it -> it.getParent() == article.getId()).toList();
+
+            for (SubQuestion subQuestion : questionList) {
+                passages.addAll(subQuestion.getQuestion());
+            }
+
             map.put("passage", passages);
             map.put("words", passageWords);
             articles.add(map);
@@ -191,32 +200,6 @@ public class TestWord {
         context.put("words", words);
         context.put("spells", spells);
         context.put("passages", articles);
-    }
-
-    public static String htmlToStr(Element element) {
-        StringBuilder builder = new StringBuilder();
-        for (com.itextpdf.styledxmlparser.jsoup.nodes.Node node : element.childNodes()) {
-            if (node instanceof TextNode) {
-                String value = ((TextNode) node).getWholeText();
-                builder.append(value);
-            } else if (node instanceof Element tag) {
-                switch (tag.tagName()) {
-                    case "br":
-                        builder.append("\n");
-                        break;
-                    case "strong":
-                    case "p":
-                        builder.append(htmlToStr(tag));
-                        break;
-                    default:
-                        log.warn("未处理标签: {}", tag.tagName());
-                        break;
-                }
-            }else {
-                throw new IllegalFormatFlagsException("未知标签: " + node.getClass());
-            }
-        }
-        return builder.toString();
     }
 
     private static List<PassageNode> parsePassage(List<PassageNode> nodes, List<WordNode> words, Consumer<PassageNode> consumer) {

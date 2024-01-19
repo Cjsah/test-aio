@@ -9,7 +9,7 @@ public class Article {
     private final String title;
     private final String type;
     private final String knowledge;
-    private final String description;
+    private final String parse;
     private final String answer;
 
     public static Article fromJson(JSONObject json) {
