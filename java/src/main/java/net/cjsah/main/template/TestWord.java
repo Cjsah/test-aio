@@ -125,49 +125,10 @@ public class TestWord {
             map.put("answers", DocUtil.parseHtml(article.getParse(), false));
             map.put("translate", Collections.emptyList()); // TODO 目前留空
 
-            String passage = DocUtil.htmlToStr(article.getTitle());
-            PassageNode passageNode = new PassageNode(passage);
-            List<PassageNode> results = parsePassage(new ArrayList<>() {{
-                this.add(passageNode);
-            }}, Collections.singletonList(new WordNode("\n")), node -> node.nextLine = true);
-            results = parsePassage(results, studyWords, node -> node.bold = true);
-            results = parsePassage(results, overWords, node -> node.italic = true);
+            DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
 
-            List<P> passages = new ArrayList<>();
-            List<JSONObject> passageWords = new ArrayList<>();
-            P p = DocUtil.genP(true);
-            passages.add(p);
-
-            int index = 0;
-            for (PassageNode node : results) {
-                if (node.nextLine) {
-                    p = DocUtil.genP(true);
-                    passages.add(p);
-                    continue;
-                }
-                R value = DocUtil.genR(node.value, node.bold, node.italic);
-                p.getContent().add(value);
-                if (node.italic) {
-                    int num = 0;
-                    for (JSONObject word : passageWords) {
-                        if (node.wordNode.getWord().equals(word.getString("word"))) {
-                            num = word.getIntValue("index");
-                            break;
-                        }
-                    }
-                    if (num == 0) {
-                        num = ++index;
-                        JSONObject word = new JSONObject();
-                        word.put("index", index);
-                        word.put("word", node.wordNode.getWord());
-                        word.put("symbol", node.wordNode.getAmericaPronunciation());
-                        word.put("translate", node.wordNode.getMeaning().replace("<br>", ""));
-                        passageWords.add(word);
-                    }
-                    value = DocUtil.genMark(num);
-                    p.getContent().add(value);
-                }
-            }
+            List<P> passages = progress.getNodes();
+            List<JSONObject> passageWords = progress.getOverWords();
 
             for (P node : passages) {
                 while (!node.getContent().isEmpty()) {
@@ -200,48 +161,6 @@ public class TestWord {
         context.put("passages", articles);
     }
 
-    private static List<PassageNode> parsePassage(List<PassageNode> nodes, List<WordNode> words, Consumer<PassageNode> consumer) {
-        List<PassageNode> results = new ArrayList<>();
-        while (!nodes.isEmpty()) {
-            PassageNode node = nodes.get(0);
-            if (node.parsed) {
-                results.add(node);
-                nodes.remove(0);
-                continue;
-            }
-            boolean noMatch = true;
-            for (WordNode word : words) {
-                int index = node.value.indexOf(word.getWord());
-                if (index != -1 && notLetter(node.value, index - 1) && notLetter(node.value, index + word.getWord().length())) {
-                    nodes.remove(0);
-                    node.substring(word.getWord().length() + index, node.value.length(), nodes);
-                    node.substring(index, word.getWord().length() + index, nodes, part -> {
-                        consumer.accept(part);
-                        part.wordNode = word;
-                        part.parsed = true;
-                    });
-                    node.substring(0, index, nodes);
-
-                    noMatch = false;
-                    break;
-                }
-
-            }
-            if (noMatch) {
-                nodes.remove(0);
-                results.add(node);
-            }
-
-        }
-        return results;
-    }
-
-    private static boolean notLetter(String value, int index) {
-        if (index < 0 || index >= value.length()) return true;
-        char c = value.charAt(index);
-        return (c < 'a' || c > 'z') && (c < 'A' || c > 'Z');
-    }
-
     @Data
     public static class Node {
         public final String index;
@@ -253,36 +172,5 @@ public class TestWord {
         }
     }
 
-    @Data
-    static class PassageNode {
-        String value;
-        boolean bold;
-        boolean italic;
-        boolean parsed;
-        boolean nextLine;
-        WordNode wordNode;
-
-        public PassageNode(String value) {
-            this.value = value;
-            this.bold = false;
-            this.italic = false;
-            this.parsed = false;
-            this.nextLine = false;
-        }
-
-        public void substring(int from, int to, List<PassageNode> append) {
-            this.substring(from, to, append, node -> {});
-        }
-
-        public void substring(int from, int to, List<PassageNode> append, Consumer<PassageNode> consumer) {
-            if (from == to) return;
-            PassageNode node = new PassageNode(this.value.substring(from, to));
-            node.bold = this.bold;
-            node.italic = this.italic;
-            consumer.accept(node);
-            append.add(0, node);
-        }
-
-    }
 
 }
