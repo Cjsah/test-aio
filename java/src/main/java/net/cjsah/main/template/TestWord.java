@@ -93,8 +93,7 @@ public class TestWord {
 
         List<WordNode> studyWords = wordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<WordNode> overWords = overWordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
-        List<Article> articlesData = questions.stream().parallel().map(it -> Article.fromJson((JSONObject) it)).toList();
-        List<SubQuestion> subQuestionData = subQuestions.stream().parallel().map(it -> SubQuestion.fromJson((JSONObject) it)).toList();
+        List<Article> articlesData = questions.stream().parallel().map(it -> Article.fromApiJson((JSONObject) it)).toList();
 
         List<JSONObject> words = new ArrayList<>();
         List<JSONObject> articles = new ArrayList<>();
@@ -145,11 +144,7 @@ public class TestWord {
             }
 
             passages = passages.stream().parallel().filter(it -> !it.getContent().isEmpty()).collect(Collectors.toList());
-            List<SubQuestion> questionList = subQuestionData.stream().parallel().filter(it -> it.getParent() == article.getId()).toList();
-
-            for (SubQuestion subQuestion : questionList) {
-                passages.addAll(subQuestion.getQuestion());
-            }
+            passages.addAll(DocUtil.parseText(article.getQuestions(), false));
 
             map.put("passage", passages);
             map.put("words", passageWords);

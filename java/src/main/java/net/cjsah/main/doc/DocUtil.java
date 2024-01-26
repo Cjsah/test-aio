@@ -215,19 +215,21 @@ public class DocUtil {
         return builder.toString();
     }
 
-    public static List<P> parseHtml(String text, boolean indent) {
-        text = htmlToStr(text);
+    public static List<P> parseText(String text, boolean indent) {
         List<P> result = new ArrayList<>();
         for (String node : text.split("\n")) {
             node = node.trim();
-            if (!node.isEmpty()) {
-                P p = genP(indent);
-                R r = genR(node, false, false);
-                p.getContent().add(r);
-                result.add(p);
-            }
+            P p = genP(indent);
+            R r = genR(node, false, false);
+            p.getContent().add(r);
+            result.add(p);
         }
         return result;
+    }
+
+    public static List<P> parseHtml(String text, boolean indent) {
+        text = htmlToStr(text);
+        return parseText(text, indent);
     }
 
     public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {

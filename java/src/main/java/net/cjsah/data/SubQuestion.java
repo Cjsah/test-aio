@@ -3,10 +3,6 @@ package net.cjsah.data;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.Data;
 import net.cjsah.main.doc.DocUtil;
-import org.docx4j.wml.P;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Data
 public class SubQuestion {
@@ -30,21 +26,25 @@ public class SubQuestion {
         );
     }
 
-    public List<P> getQuestion() {
-        List<P> question = new ArrayList<>();
-        question.add(DocUtil.genP(DocUtil.htmlToStr(this.title).trim()));
-        this.appendOption(question, this.optionA, 'A');
-        this.appendOption(question, this.optionB, 'B');
-        this.appendOption(question, this.optionC, 'C');
-        this.appendOption(question, this.optionD, 'D');
-        question.add(DocUtil.genP(""));
-        return question;
+    public String getQuestion() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(DocUtil.htmlToStr(this.title).trim());
+        builder.append('\n');
+        this.appendOption(builder, this.optionA, 'A');
+        this.appendOption(builder, this.optionB, 'B');
+        this.appendOption(builder, this.optionC, 'C');
+        this.appendOption(builder, this.optionD, 'D');
+        builder.append('\n');
+        return builder.toString();
     }
 
-    private void appendOption(List<P> question, String option, char select) {
+    private void appendOption(StringBuilder builder, String option, char select) {
         if (!option.trim().isEmpty()) {
             option = DocUtil.htmlToStr(option).trim();
-            question.add(DocUtil.genP(select + ". " + option));
+            builder.append(select);
+            builder.append(". ");
+            builder.append(option);
+            builder.append('\n');
         }
     }
 }
