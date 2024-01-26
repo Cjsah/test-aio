@@ -157,10 +157,6 @@ public class TestWord {
                     }
                     if (num == 0) {
                         num = ++index;
-                    }
-                    value = DocUtil.genMark(num);
-                    p.getContent().add(value);
-                    if (num == index) {
                         JSONObject word = new JSONObject();
                         word.put("index", index);
                         word.put("word", node.wordNode.getWord());
@@ -168,6 +164,8 @@ public class TestWord {
                         word.put("translate", node.wordNode.getMeaning().replace("<br>", ""));
                         passageWords.add(word);
                     }
+                    value = DocUtil.genMark(num);
+                    p.getContent().add(value);
                 }
             }
 

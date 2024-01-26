@@ -153,6 +153,7 @@ public class DocUtil {
                     case "p":
                     case "u":
                     case "div":
+                    case "span":
                         builder.append(htmlToStr(tag));
                         break;
                     default:
