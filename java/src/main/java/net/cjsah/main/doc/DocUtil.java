@@ -355,6 +355,20 @@ public class DocUtil {
             boolean noMatch = true;
             for (WordNode word : words) {
                 int index = node.value.indexOf(word.getWord());
+//                if (index != -1) {
+//                    if (!letter || (notLetter(node.value, index - 1) && notLetter(node.value, index + word.getWord().length()))) {
+//                        nodes.remove(0);
+//                        node.substring(word.getWord().length() + index, node.value.length(), nodes);
+//                        node.substring(index, word.getWord().length() + index, nodes, part -> {
+//                            consumer.accept(part);
+//                            part.wordNode = word;
+//                            part.parsed = true;
+//                        });
+//                        node.substring(0, index, nodes);
+//                        noMatch = false;
+//                        break;
+//                    }
+//                }
                 if (index != -1 && (!letter || (notLetter(node.value, index - 1) && notLetter(node.value, index + word.getWord().length())))) {
                     nodes.remove(0);
                     node.substring(word.getWord().length() + index, node.value.length(), nodes);
