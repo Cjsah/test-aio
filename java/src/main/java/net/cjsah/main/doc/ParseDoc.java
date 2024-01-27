@@ -20,7 +20,7 @@ import java.util.Objects;
 public class ParseDoc {
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Docx4JException {
-        String path = "./math/template/template.docx";
+        String path = "./math/template/table.docx";
 
         WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path));
 

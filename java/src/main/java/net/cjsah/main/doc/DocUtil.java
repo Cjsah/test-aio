@@ -250,8 +250,6 @@ public class DocUtil {
                     this.add(passageNode);
                 }};
                 results = parsePassage(results, Collections.singletonList(new WordNode("\n")), word -> word.nextLine = true, false);
-                System.out.println(results);
-                System.out.println("===");
                 if (!bolds.isEmpty()) {
                     results = parsePassage(results, bolds, word -> word.bold = true, true);
                 }
