@@ -6,6 +6,7 @@ import com.itextpdf.styledxmlparser.jsoup.nodes.Comment;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Element;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Node;
 import com.itextpdf.styledxmlparser.jsoup.nodes.TextNode;
+import com.itextpdf.styledxmlparser.jsoup.select.Elements;
 import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -248,20 +249,24 @@ public class DocUtil {
                 List<PassageNode> results = new ArrayList<>() {{
                     this.add(passageNode);
                 }};
-                results = parsePassage(results, Collections.singletonList(new WordNode("\n")), word -> word.nextLine = true);
+                results = parsePassage(results, Collections.singletonList(new WordNode("\n")), word -> word.nextLine = true, false);
+                System.out.println(results);
+                System.out.println("===");
                 if (!bolds.isEmpty()) {
-                    results = parsePassage(results, bolds, word -> word.bold = true);
+                    results = parsePassage(results, bolds, word -> word.bold = true, true);
                 }
                 if (!italics.isEmpty()) {
-                    results = parsePassage(results, italics, word -> word.italic = true);
+                    results = parsePassage(results, italics, word -> word.italic = true, true);
                 }
 
+                System.out.println(results);
                 for (PassageNode pnode : results) {
                     if (pnode.nextLine) {
                         progress.now = genP(true);
                         progress.nodes.add(progress.now);
                         continue;
                     }
+                    System.out.println(pnode);
                     R r = DocUtil.genR(pnode.value, format, pnode.bold, pnode.italic);
                     progress.now.getContent().add(r);
                     if (pnode.italic) {
@@ -278,13 +283,14 @@ public class DocUtil {
                             word.put("index", num);
                             word.put("word", pnode.wordNode.getWord());
                             word.put("symbol", pnode.wordNode.getAmericaPronunciation());
-                            word.put("translate", pnode.wordNode.getMeaning().replace("<br>", ""));
+                            word.put("translate", pnode.wordNode.getMeaning());
                             progress.overWords.add(word);
                         }
                         r = DocUtil.genMark(num);
                         progress.now.getContent().add(r);
                     }
                 }
+                System.out.println("===");
             } else if (node instanceof Element tag) {
                 switch (tag.tagName()) {
                     case "br":
@@ -292,15 +298,24 @@ public class DocUtil {
                         progress.nodes.add(progress.now);
                         break;
                     case "strong":
-                    case "p":
                     case "div":
                     case "span":
                         parseHtmlNode(tag, progress, format, bolds, italics);
+                        break;
+                    case "p":
+                        progress.now = genP(true);
+                        progress.nodes.add(progress.now);
+                        parseHtmlNode(tag, progress, format, bolds, italics);
+                        progress.now = genP(true);
+                        progress.nodes.add(progress.now);
                         break;
                     case "u":
                         RPr rPr = copyRpr(format);
                         setUnderline(rPr);
                         parseHtmlNode(tag, progress, rPr, Collections.emptyList(), Collections.emptyList());
+                        break;
+                    case "table":
+
                         break;
                     default:
                         log.warn("未处理标签: {}", tag.tagName());
@@ -310,10 +325,25 @@ public class DocUtil {
                 log.warn("未知标签: {}", node.getClass());
             }
         }
-
     }
 
-    private static List<PassageNode> parsePassage(List<PassageNode> nodes, List<WordNode> words, Consumer<PassageNode> consumer) {
+    private static void parseTable(Element table, ParseProgress progress, RPr format, List<WordNode> bolds, List<WordNode> italics) {
+        Elements trs = table.getElementsByTag("tr");
+        if (trs.isEmpty()) return;
+        int cows = 0;
+        for (Element tr : trs) {
+            Elements tds = tr.getElementsByTag("td");
+            if (tds.size() > cows) cows = tds.size();
+
+
+
+        }
+
+
+        System.out.println(table.html());
+    }
+
+    private static List<PassageNode> parsePassage(List<PassageNode> nodes, List<WordNode> words, Consumer<PassageNode> consumer, boolean letter) {
         List<PassageNode> results = new ArrayList<>();
         while (!nodes.isEmpty()) {
             PassageNode node = nodes.get(0);
@@ -325,7 +355,7 @@ public class DocUtil {
             boolean noMatch = true;
             for (WordNode word : words) {
                 int index = node.value.indexOf(word.getWord());
-                if (index != -1 && notLetter(node.value, index - 1) && notLetter(node.value, index + word.getWord().length())) {
+                if (index != -1 && (!letter || (notLetter(node.value, index - 1) && notLetter(node.value, index + word.getWord().length())))) {
                     nodes.remove(0);
                     node.substring(word.getWord().length() + index, node.value.length(), nodes);
                     node.substring(index, word.getWord().length() + index, nodes, part -> {

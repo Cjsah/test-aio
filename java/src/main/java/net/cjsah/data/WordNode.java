@@ -24,7 +24,7 @@ public class WordNode {
     public static WordNode fromJson(JSONObject json) {
         return new WordNode(
                 json.getString("word"),
-                json.getString("meaning"),
+                json.getString("meaning").replace("&", "&amp;").replace("<br>", ""),
                 json.getString("englishPronunciation"),
                 json.getString("americaPronunciation"),
                 JsonUtil.jsonGetList(json, "sentence", Sentence::fromJson)

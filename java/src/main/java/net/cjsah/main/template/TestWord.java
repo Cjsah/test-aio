@@ -7,7 +7,6 @@ import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.Article;
-import net.cjsah.data.SubQuestion;
 import net.cjsah.data.WordNode;
 import net.cjsah.main.doc.DocUtil;
 import net.cjsah.util.JsonUtil;
@@ -28,7 +27,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -87,9 +85,8 @@ public class TestWord {
         JSONObject json = JsonUtil.str2Obj(jsonStr, JSONObject.class);
         json = json.getJSONObject("data");
         JSONArray questions = json.getJSONArray("questions");
-        JSONArray wordsArray = json.getJSONArray("words");
+        JSONArray wordsArray = json.getJSONArray("studyWordList");
         JSONArray overWordsArray = json.getJSONArray("overWords");
-        JSONArray subQuestions = json.getJSONArray("subquestions");
 
         List<WordNode> studyWords = wordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<WordNode> overWords = overWordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
@@ -120,7 +117,7 @@ public class TestWord {
             JSONObject map = new JSONObject();
             map.put("index", i + 1);
             map.put("num", article.getId());
-            map.put("count", -1); // TODO 未知数据
+            map.put("count", article.getWordCount()); // TODO 未知数据
             map.put("answers", DocUtil.parseHtml(article.getParse(), false));
             map.put("translate", Collections.emptyList()); // TODO 目前留空
 
