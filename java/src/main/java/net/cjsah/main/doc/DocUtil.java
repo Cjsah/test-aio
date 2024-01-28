@@ -330,11 +330,13 @@ public class DocUtil {
         for (Element tr : trs) {
             Elements tds = tr.getElementsByTag("td");
             if (tds.size() > cows) cows = tds.size();
+            for (Element td : tds) {
 
+                td.val();
 
+            }
 
         }
-
 
         System.out.println(table.html());
     }
