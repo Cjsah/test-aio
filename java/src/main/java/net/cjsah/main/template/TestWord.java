@@ -3,7 +3,6 @@ package net.cjsah.main.template;
 import cn.hutool.core.io.FileUtil;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.Article;
@@ -14,10 +13,8 @@ import org.docx4j.TraversalUtil;
 import org.docx4j.finders.ClassFinder;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
-import org.docx4j.wml.P;
-import org.docx4j.wml.R;
+import org.docx4j.wml.ContentAccessor;
 import org.docx4j.wml.Tbl;
-import org.docx4j.wml.Text;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -79,7 +76,6 @@ public class TestWord {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static void getContext(JSONObject context) {
         String jsonStr = FileUtil.readString(new File("article.json"), StandardCharsets.UTF_8);
         JSONObject json = JsonUtil.str2Obj(jsonStr, JSONObject.class);
@@ -123,24 +119,11 @@ public class TestWord {
 
             DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
 
-            List<P> passages = progress.getNodes();
+            List<ContentAccessor> passages = progress.getNodes();
             List<JSONObject> passageWords = progress.getOverWords();
 
-            for (P node : passages) {
-                while (!node.getContent().isEmpty()) {
-                    Text text = ((JAXBElement<Text>) ((R) node.getContent().get(0)).getContent().get(0)).getValue();
-                    String value = text.getValue();
-                    if (value.trim().isEmpty()) {
-                        node.getContent().remove(0);
-                    } else {
-                        text.setValue(value.stripLeading());
-                        break;
-                    }
-                }
+            passages = DocUtil.trim(passages);
 
-            }
-
-            passages = passages.stream().parallel().filter(it -> !it.getContent().isEmpty()).collect(Collectors.toList());
             passages.addAll(DocUtil.parseText(article.getQuestions(), false));
 
             map.put("passage", passages);
