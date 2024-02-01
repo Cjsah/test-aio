@@ -3,6 +3,7 @@ package net.cjsah.main.template;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
+import net.cjsah.main.doc.DocUtil;
 import org.docx4j.TraversalUtil;
 import org.docx4j.XmlUtils;
 import org.docx4j.finders.ClassFinder;
@@ -106,9 +107,9 @@ public class TableTemplate {
         Tbl passageTable = (Tbl) finder.results.get(0);
         parsePassageTranslate(passageTable, (List<JSONObject>) passage.get("words"));
 
-        P p = getTrContent(tr);
-        p.getContent().clear();
-        p.getContent().addAll((List<?>) passage.get("passages"));
+        List<Object> content = getTrList(tr);
+        content.clear();
+        content.addAll((List<?>) passage.get("passage"));
     }
 
     public static void parsePassageTranslate(Tbl table, List<JSONObject> words) throws JAXBException {
@@ -122,15 +123,52 @@ public class TableTemplate {
         }
 
     }
+    public static void parseAnswer(Tbl table, List<JSONObject> passages) throws JAXBException {
+        Tr tr = (Tr) table.getContent().get(0);
+        String template = XmlUtils.marshaltoString(tr);
+        table.getContent().clear();
+
+        for (JSONObject passage : passages) {
+            tr = (Tr) XmlUtils.unmarshalString(template);
+            table.getContent().add(tr);
+
+            List<Object> trList = getTrList(tr);
+            trList.clear();
+            P p = DocUtil.genP("Passage " + passage.getIntValue("index"));
+            DocUtil.setBold(p);
+
+            trList.add(p);
+            trList.addAll((List<?>) passage.get("answers"));
+        }
+    }
+
+    public static void parseTranslate(Tbl table, List<JSONObject> passages) throws JAXBException {
+        Tr tr = (Tr) table.getContent().get(0);
+        String template = XmlUtils.marshaltoString(tr);
+        table.getContent().clear();
+
+        for (JSONObject passage : passages) {
+            tr = (Tr) XmlUtils.unmarshalString(template);
+            table.getContent().add(tr);
+
+            List<Object> trList = getTrList(tr);
+            trList.clear();
+            P p = DocUtil.genP("Passage " + passage.getIntValue("index"));
+            DocUtil.setBold(p);
+
+            trList.add(p);
+            trList.addAll((List<?>) passage.get("translate"));
+        }
+    }
 
     @SuppressWarnings("unchecked")
-    private static P getTrContent(Tr tr) {
-        return  (P) (((JAXBElement<Tc>)tr.getContent().get(0)).getValue()).getContent().get(0);
+    private static List<Object> getTrList(Tr tr) {
+        return (((JAXBElement<Tc>)tr.getContent().get(0)).getValue()).getContent();
     }
 
     @SuppressWarnings("unchecked")
     private static void remap(Tr tr, Map<String, Object> map) {
-        getTrContent(tr).getContent().stream().parallel()
+        ((P)getTrList(tr).get(0)).getContent().stream().parallel()
                 .map(it -> ((JAXBElement<Text>)((R) it).getContent().get(0)).getValue())
                 .forEach(it -> {
                     Matcher matcher = PATTERN.matcher(it.getValue());
