@@ -1,4 +1,7 @@
-import base
+# import base
 
-session = requests.session()
+import nbtlib
+
+
+nbt = nbtlib.File('c.-24.12.mcc', 'rb')
 
