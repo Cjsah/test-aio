@@ -22,7 +22,7 @@ public class HikariSql {
 
     static {
         dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://192.168.0.10:3306/passage?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
+        dataSource.setJdbcUrl("jdbc:mysql://s.shuhai777.com:3307/passage?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setUsername("root");
         dataSource.setPassword("mysql");
@@ -72,7 +72,7 @@ public class HikariSql {
 
     public static boolean update(long id, int wordCount, int difficulty) throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement("select word_range wr, difficulty dif from passage_total where passage_id = ?");
+            PreparedStatement preparedStatement = connection.prepareStatement("select word_range wr, difficulty_range dif from passage_total where passage_id = ?");
             preparedStatement.setLong(1, id);
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
@@ -86,7 +86,7 @@ public class HikariSql {
                 difficultyRange = JsonUtil.obj2Str(difficultyList);
                 resultSet.close();
                 preparedStatement.close();
-                preparedStatement = connection.prepareStatement("update passage_total set word_range = ? , difficulty = ? where passage_id = ?");
+                preparedStatement = connection.prepareStatement("update passage_total set word_range = ? , difficulty_range = ? where passage_id = ?");
                 preparedStatement.setString(1, wordRange);
                 preparedStatement.setString(2, difficultyRange);
                 preparedStatement.setLong(3, id);

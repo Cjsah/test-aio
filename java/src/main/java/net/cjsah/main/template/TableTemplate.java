@@ -3,6 +3,7 @@ package net.cjsah.main.template;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
+import lombok.SneakyThrows;
 import net.cjsah.main.doc.DocUtil;
 import org.docx4j.TraversalUtil;
 import org.docx4j.XmlUtils;
@@ -14,10 +15,12 @@ import org.docx4j.wml.Tc;
 import org.docx4j.wml.Text;
 import org.docx4j.wml.Tr;
 
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -180,4 +183,27 @@ public class TableTemplate {
                 });
 
     }
+
+    @SneakyThrows
+    private static String matcherReplace(Matcher matcher, Function<String, String> replacer) {
+        boolean result = matcher.find();
+        if (result) {
+            StringBuilder sb = new StringBuilder();
+            do {
+                String replacement = replacer.apply(matcher.group());
+                matcher.appendReplacement(sb, replacement);
+                result = matcher.find();
+            } while (result);
+            matcher.appendTail(sb);
+            return sb.toString();
+        }
+
+
+        Field text = matcher.getClass().getDeclaredField("text");
+        Object value = text.get(matcher);
+        System.out.println(value);
+        return value.toString();
+
+    }
+
 }

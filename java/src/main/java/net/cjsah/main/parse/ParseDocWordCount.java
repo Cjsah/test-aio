@@ -21,7 +21,7 @@ public class ParseDocWordCount {
     static int completeCount = 0;
 
     public static void main(String[] args) {
-        File file = new File("/Users/cjsah/Desktop/文章库");
+        File file = new File("文章库");
 
         try {
             travel(file);
