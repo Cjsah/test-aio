@@ -1,5 +1,6 @@
-package net.cjsah.main.doc;
+package net.cjsah.util;
 
+import antlr.StringUtils;
 import com.alibaba.fastjson2.JSONObject;
 import com.itextpdf.styledxmlparser.jsoup.Jsoup;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Comment;
@@ -11,28 +12,7 @@ import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.WordNode;
-import org.docx4j.wml.BooleanDefaultTrue;
-import org.docx4j.wml.CTLanguage;
-import org.docx4j.wml.CTVerticalAlignRun;
-import org.docx4j.wml.ContentAccessor;
-import org.docx4j.wml.P;
-import org.docx4j.wml.PPr;
-import org.docx4j.wml.PPrBase;
-import org.docx4j.wml.ParaRPr;
-import org.docx4j.wml.R;
-import org.docx4j.wml.RFonts;
-import org.docx4j.wml.RPr;
-import org.docx4j.wml.RPrAbstract;
-import org.docx4j.wml.STHint;
-import org.docx4j.wml.STVerticalAlignRun;
-import org.docx4j.wml.Tbl;
-import org.docx4j.wml.TblWidth;
-import org.docx4j.wml.Tc;
-import org.docx4j.wml.TcPr;
-import org.docx4j.wml.Text;
-import org.docx4j.wml.Tr;
-import org.docx4j.wml.U;
-import org.docx4j.wml.UnderlineEnumeration;
+import org.docx4j.wml.*;
 
 import javax.xml.namespace.QName;
 import java.math.BigInteger;
@@ -83,27 +63,27 @@ public class DocUtil {
 
     public static P genP(boolean indent) {
         return new P() {{
-           this.pPr = new PPr() {{
-               this.rPr = new ParaRPr() {{
-                   this.rFonts = new RFonts() {{
-                       this.hint = STHint.DEFAULT;
-                       this.ascii = "Times New Roman";
-                       this.hAnsi = "Times New Roman";
-                   }};
-                   this.vertAlign = new CTVerticalAlignRun() {{
-                       this.val = STVerticalAlignRun.BASELINE;
-                   }};
-                   this.lang = new CTLanguage() {{
-                       this.val = "en-US";
-                   }};
-               }};
-               if (indent) {
-                   this.ind = new PPrBase.Ind() {{
-                       this.firstLine = new BigInteger("420");
-                       this.firstLineChars = new BigInteger("200");
-                   }};
-               }
-           }};
+            this.pPr = new PPr() {{
+                this.rPr = new ParaRPr() {{
+                    this.rFonts = new RFonts() {{
+                        this.hint = STHint.DEFAULT;
+                        this.ascii = "Times New Roman";
+                        this.hAnsi = "Times New Roman";
+                    }};
+                    this.vertAlign = new CTVerticalAlignRun() {{
+                        this.val = STVerticalAlignRun.BASELINE;
+                    }};
+                    this.lang = new CTLanguage() {{
+                        this.val = "en-US";
+                    }};
+                }};
+                if (indent) {
+                    this.ind = new Ind() {{
+                        this.firstLine = new BigInteger("420");
+                        this.firstLineChars = new BigInteger("200");
+                    }};
+                }
+            }};
         }};
     }
 
@@ -185,7 +165,8 @@ public class DocUtil {
             if (node instanceof TextNode) {
                 String value = ((TextNode) node).getWholeText();
                 builder.append(value);
-            } else if (node instanceof Element tag) {
+            } else if (node instanceof Element) {
+                Element tag = (Element) node;
                 switch (tag.tagName()) {
                     case "br":
                         builder.append("\n");
@@ -220,11 +201,6 @@ public class DocUtil {
         return result;
     }
 
-    public static List<P> parseHtml(String text, boolean indent) {
-        text = htmlToStr(text);
-        return parseText(text, indent);
-    }
-
     public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {
         text = "<html><body>" + text.replace('\r', '\n') + "</body></html>";
         Element body = Jsoup.parse(text).body();
@@ -238,7 +214,7 @@ public class DocUtil {
             if (node instanceof TextNode) {
                 String value = ((TextNode) node).getWholeText();
                 PassageNode passageNode = new PassageNode(value);
-                List<PassageNode> results = new ArrayList<>() {{
+                List<PassageNode> results = new ArrayList<PassageNode>() {{
                     this.add(passageNode);
                 }};
                 results = parsePassage(results, Collections.singletonList(new WordNode("\n")), word -> word.nextLine = true, false);
@@ -271,14 +247,15 @@ public class DocUtil {
                             word.put("index", num);
                             word.put("word", pnode.wordNode.getWord());
                             word.put("symbol", pnode.wordNode.getAmericaPronunciation());
-                            word.put("translate", pnode.wordNode.getMeaning());
+                            word.put("translate", pnode.wordNode.getMeaning().replaceAll("(<br>|\n)", " "));
                             progress.overWords.add(word);
                         }
                         r = DocUtil.genMark(num);
                         progress.now.getContent().add(r);
                     }
                 }
-            } else if (node instanceof Element tag) {
+            } else if (node instanceof Element) {
+                Element tag = (Element) node;
                 switch (tag.tagName()) {
                     case "br":
                         progress.now = genP(true);
@@ -328,8 +305,8 @@ public class DocUtil {
                 Tc docTc = new Tc() {{
                     this.tcPr = new TcPr() {{
                         this.tcW = new TblWidth() {{
-                           this.w = new BigInteger(width);
-                           this.type = "dxa";
+                            this.w = new BigInteger(width);
+                            this.type = "dxa";
                         }};
                     }};
                 }};
@@ -338,12 +315,7 @@ public class DocUtil {
                 tdProgress.nodes = trim(tdProgress.nodes);
                 tdProgress.nodes.stream().parallel().forEach(it -> {
                     if (it instanceof P) {
-                        PPr pPr = ((P) it).getPPr();
-                        PPrBase.Ind indent = pPr.getInd();
-                        if (indent == null) {
-                            indent = new PPrBase.Ind();
-                            pPr.setInd(indent);
-                        }
+                        PPrBase.Ind indent = ((P) it).getPPr().getInd();
                         indent.setFirstLine(new BigInteger("315"));
                         indent.setFirstLineChars(new BigInteger("150"));
                     }
@@ -404,7 +376,7 @@ public class DocUtil {
                 if (value.trim().isEmpty()) {
                     node.getContent().remove(0);
                 } else {
-                    text.setValue(value.stripLeading());
+                    text.setValue(StringUtils.stripFront(value, " \t"));
                     break;
                 }
             }
@@ -463,5 +435,4 @@ public class DocUtil {
         }
 
     }
-
 }

@@ -5,7 +5,6 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.cjsah.util.JsonUtil;
 
-import java.util.Collections;
 import java.util.List;
 
 @Data
@@ -22,12 +21,18 @@ public class WordNode {
     }
 
     public static WordNode fromJson(JSONObject json) {
-        return new WordNode(
-                json.getString("word"),
-                json.getString("meaning").replace("&", "&amp;").replace("<br>", ""),
-                json.getString("englishPronunciation"),
-                json.getString("americaPronunciation"),
-                JsonUtil.jsonGetList(json, "sentence", Sentence::fromJson)
-        );
+        String word = json.getString("word");
+        String meaning = json.getString("meaning");
+        String englishPronunciation = json.getString("englishPronunciation");
+        String americaPronunciation = json.getString("americaPronunciation");
+        List<Sentence> sentence = JsonUtil.jsonGetList(json, "sentence", Sentence::fromJson);
+
+        if (meaning == null) meaning = "";
+        if (englishPronunciation == null) englishPronunciation = "";
+        if (americaPronunciation == null) americaPronunciation = "";
+
+        meaning = meaning.replace("&", "&amp;").replace("<br>", "");
+
+        return new WordNode(word, meaning, englishPronunciation, americaPronunciation, sentence);
     }
 }
