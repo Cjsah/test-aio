@@ -167,10 +167,11 @@ public class WordTableTemplate {
     @SuppressWarnings("unchecked")
     private static void remap(Tr tr, Map<String, Object> map) {
         ((P)getTrList(tr).get(0)).getContent().stream().parallel()
-                .map(it -> ((JAXBElement<Text>)((R) it).getContent().get(0)).getValue())
+                .map(it -> ((JAXBElement<Text>) ((R) it).getContent().get(0)).getValue())
                 .forEach(it -> {
                     Matcher matcher = PATTERN.matcher(it.getValue());
-                    it.setValue(matcherReplace(matcher, key -> {
+                    it.setValue(matcher.replaceAll(result -> {
+                        String key = result.group();
                         key = key.substring(2, key.length() - 1);
                         return map.getOrDefault(key, "{" + key + "}").toString();
                     }));

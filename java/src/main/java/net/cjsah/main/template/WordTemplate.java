@@ -19,7 +19,6 @@ import org.docx4j.wml.Tbl;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -118,7 +117,7 @@ public class WordTemplate {
         for (int i = 0; i < studyWords.size(); i++) {
             WordNode word = studyWords.get(i);
             if (null == word.getWord() || null == word.getMeaning()) continue;
-            List<Map<String, String>> translateMap = Arrays.stream(word.getMeaning().split("(<br>|\\n)"))
+            List<Map<String, String>> translateMap = Arrays.stream(word.getMeaning().split("(<br/>|\\n)"))
                     .filter(meaning -> !meaning.trim().isEmpty() && !meaning.startsWith("*"))
                     .map(it -> it.replace("&", "&amp;"))
                     .peek(spells::add)
@@ -171,8 +170,14 @@ public class WordTemplate {
             WordTableTemplate.parseSpell(spellTable, spells);
 
         }));
+        FINDER.put("article", ((tables, context) -> {
+            List<JSONObject> passages = (List<JSONObject>) context.get("passages");
 
+            System.out.println(tables);
+            Tbl passageTable = (Tbl) tables.get(0);
+            WordTableTemplate.parsePassage(passageTable, passages);
 
+        }));
     }
 
     interface Replacer {
