@@ -40,7 +40,7 @@ public class WordTemplate {
 
         try {
             String s = FileUtil.readUtf8String(new File("template.json"));
-            JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
+                JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
 
             JSONObject context = new JSONObject();
             getContext(context);
@@ -51,19 +51,22 @@ public class WordTemplate {
 
             List<Object> content = document.getContent();
 
-            System.out.println(content);
-
             List<Object> newList = new ArrayList<>();
 
             ClassFinder finder = new ClassFinder(Tbl.class);
 
             for (Object o : content) {
                 String value = o.toString();
-                System.out.println(value);
 
                 if (pattern.matcher(value).find()) {
                     value = value.substring(2, value.length() - 1);
-                    System.out.println(value);
+                    int emptyLines = (int) context.getOrDefault("allow-" + value, 0);
+                    if (emptyLines >= 0) {
+                        for (int i = 0; i < emptyLines; i++) {
+                            newList.add(DocUtil.genP(""));
+                        }
+                        continue;
+                    }
                     JSONArray array = json.getJSONArray(value);
                     if (array != null) {
                         List<Object> append = new ArrayList<>();
@@ -105,7 +108,6 @@ public class WordTemplate {
         JSONArray wordsArray = json.getJSONArray("studyWordList");
         JSONArray overWordsArray = json.getJSONArray("overWords");
 
-        System.out.println(wordsArray);
         List<WordNode> studyWords = wordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<WordNode> overWords = overWordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<Article> articlesData = questions.stream().parallel().map(it -> Article.fromApiJson((JSONObject) it)).toList();
@@ -156,32 +158,53 @@ public class WordTemplate {
         context.put("words", words);
         context.put("spells", spells);
         context.put("passages", articles);
+
+//        context.put("allow-tip", -1);
+//        context.put("allow-word", 9);
+//        context.put("allow-article", -1);
+//        context.put("allow-answer", 0);
+
+//        context.put("allow-tip", -1);
+//        context.put("allow-word", -1);
+//        context.put("allow-article", 0);
+//        context.put("allow-answer", 0);
+
+//        context.put("allow-tip", -1);
+//        context.put("allow-word", -1);
+//        context.put("allow-article", -1);
+//        context.put("allow-answer", 0);
+
+        context.put("allow-tip", 0);
+        context.put("allow-word", 3);
+        context.put("allow-article", 0);
+        context.put("allow-answer", -1);
+
     }
 
     static {
         FINDER.put("word", ((tables, context) -> {
             List<JSONObject> words = (List<JSONObject>) context.get("words");
             List<String> spells = (List<String>) context.get("spells");
-
-            System.out.println(tables);
             Tbl wordsTable = (Tbl) tables.get(0);
             Tbl spellTable = (Tbl) tables.get(2);
             WordTableTemplate.parseWords(wordsTable, words);
             WordTableTemplate.parseSpell(spellTable, spells);
-
         }));
         FINDER.put("article", ((tables, context) -> {
             List<JSONObject> passages = (List<JSONObject>) context.get("passages");
-
-            System.out.println(tables);
             Tbl passageTable = (Tbl) tables.get(0);
             WordTableTemplate.parsePassage(passageTable, passages);
-
+        }));
+        FINDER.put("answer", ((tables, context) -> {
+            List<JSONObject> passages = (List<JSONObject>) context.get("passages");
+            Tbl answerTable = (Tbl) tables.get(0);
+            Tbl translateTable = (Tbl) tables.get(1);
+            WordTableTemplate.parseAnswer(answerTable, passages);
+            WordTableTemplate.parseTranslate(translateTable, passages);
         }));
     }
 
     interface Replacer {
         void replace(List<Object> tables, JSONObject context) throws JAXBException;
-
     }
 }
