@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import jakarta.xml.bind.JAXBElement;
 import jakarta.xml.bind.JAXBException;
 import lombok.SneakyThrows;
-import net.cjsah.main.doc.DocUtil;
+import net.cjsah.util.DocUtil;
 import org.docx4j.TraversalUtil;
 import org.docx4j.XmlUtils;
 import org.docx4j.finders.ClassFinder;

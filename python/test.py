@@ -1,21 +1,10 @@
 # import base
+import re
 
-with open('lexicon.sql', 'r') as f:
+with open('sql/lexicon_detail.sql', 'r', encoding='utf-8') as f:
     lexicon = f.read()
 
-lexicon = lexicon.split("\n")
+lexicon = lexicon.replace('INSERT INTO api.lexicon_detail (', 'INSERT INTO lexicon_detail (')
 
-# node = lexicon[0]
-#
-# print(node)
-#
-# print(node[:12] + node[22:48] + node[52:1018] + '139' + node[1030:])
-
-newList = []
-
-lexicon = [node[:12] + node[22:48] + node[52:1018] + '139' + node[1030:] for node in lexicon]
-
-lexicon = '\n'.join(lexicon)
-
-with open('new.sql', 'w+', encoding='utf-8') as f:
+with open('sql/lexicon_detail.sql', 'w+', encoding='utf-8') as f:
     f.write(lexicon)

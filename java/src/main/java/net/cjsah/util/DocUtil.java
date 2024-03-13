@@ -1,6 +1,8 @@
 package net.cjsah.util;
 
 import antlr.StringUtils;
+import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson2.JSONObject;
 import com.itextpdf.styledxmlparser.jsoup.Jsoup;
 import com.itextpdf.styledxmlparser.jsoup.nodes.Comment;
@@ -12,7 +14,32 @@ import jakarta.xml.bind.JAXBElement;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.WordNode;
-import org.docx4j.wml.*;
+import org.docx4j.dml.wordprocessingDrawing.Inline;
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
+import org.docx4j.openpackaging.parts.WordprocessingML.BinaryPartAbstractImage;
+import org.docx4j.wml.BooleanDefaultTrue;
+import org.docx4j.wml.CTLanguage;
+import org.docx4j.wml.CTVerticalAlignRun;
+import org.docx4j.wml.ContentAccessor;
+import org.docx4j.wml.Drawing;
+import org.docx4j.wml.P;
+import org.docx4j.wml.PPr;
+import org.docx4j.wml.PPrBase;
+import org.docx4j.wml.ParaRPr;
+import org.docx4j.wml.R;
+import org.docx4j.wml.RFonts;
+import org.docx4j.wml.RPr;
+import org.docx4j.wml.RPrAbstract;
+import org.docx4j.wml.STHint;
+import org.docx4j.wml.STVerticalAlignRun;
+import org.docx4j.wml.Tbl;
+import org.docx4j.wml.TblWidth;
+import org.docx4j.wml.Tc;
+import org.docx4j.wml.TcPr;
+import org.docx4j.wml.Text;
+import org.docx4j.wml.Tr;
+import org.docx4j.wml.U;
+import org.docx4j.wml.UnderlineEnumeration;
 
 import javax.xml.namespace.QName;
 import java.math.BigInteger;
@@ -63,27 +90,27 @@ public class DocUtil {
 
     public static P genP(boolean indent) {
         return new P() {{
-            this.pPr = new PPr() {{
-                this.rPr = new ParaRPr() {{
-                    this.rFonts = new RFonts() {{
-                        this.hint = STHint.DEFAULT;
-                        this.ascii = "Times New Roman";
-                        this.hAnsi = "Times New Roman";
-                    }};
-                    this.vertAlign = new CTVerticalAlignRun() {{
-                        this.val = STVerticalAlignRun.BASELINE;
-                    }};
-                    this.lang = new CTLanguage() {{
-                        this.val = "en-US";
-                    }};
-                }};
-                if (indent) {
-                    this.ind = new Ind() {{
-                        this.firstLine = new BigInteger("420");
-                        this.firstLineChars = new BigInteger("200");
-                    }};
-                }
-            }};
+           this.pPr = new PPr() {{
+               this.rPr = new ParaRPr() {{
+                   this.rFonts = new RFonts() {{
+                       this.hint = STHint.DEFAULT;
+                       this.ascii = "Times New Roman";
+                       this.hAnsi = "Times New Roman";
+                   }};
+                   this.vertAlign = new CTVerticalAlignRun() {{
+                       this.val = STVerticalAlignRun.BASELINE;
+                   }};
+                   this.lang = new CTLanguage() {{
+                       this.val = "en-US";
+                   }};
+               }};
+               if (indent) {
+                   this.ind = new PPrBase.Ind() {{
+                       this.firstLine = new BigInteger("420");
+                       this.firstLineChars = new BigInteger("200");
+                   }};
+               }
+           }};
         }};
     }
 
@@ -153,6 +180,34 @@ public class DocUtil {
         }};
     }
 
+    private static R genImage(WordprocessingMLPackage word, String url) {
+        try {
+            String link = "https://ai-english.shuhai777.cn";
+            HttpRequest request = HttpRequest.get(link + url).timeout(10000);
+            byte[] body = null;
+            try (HttpResponse response = request.execute()) {
+                body = response.bodyBytes();
+            } catch (Exception e) {
+                log.error("Failed", e);
+            }
+            if (body == null) throw new RuntimeException("下载失败");
+            BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(word, body);
+            word.getRelationshipsPart().getNextId();
+            String rldId = imagePart.getSourceRelationships().get(0).getId();
+            int id = Integer.parseInt(rldId.substring(3));
+            Inline inline = imagePart.createImageInline("img", "img", id, id, false, 7000);
+            R r = new R();
+            r.setRPr(genRpr(false, false));
+            Drawing drawing = new Drawing();
+            drawing.getAnchorOrInline().add(inline);
+            JAXBElement<Drawing> jaxbElement = genJAXBElement("drawing", Drawing.class, drawing);
+            r.getContent().add(jaxbElement);
+            return r;
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static String htmlToStr(String passage) {
         passage = "<html><body>" + passage.replace('\r', '\n') + "</body></html>";
         Element body = Jsoup.parse(passage).body();
@@ -165,8 +220,7 @@ public class DocUtil {
             if (node instanceof TextNode) {
                 String value = ((TextNode) node).getWholeText();
                 builder.append(value);
-            } else if (node instanceof Element) {
-                Element tag = (Element) node;
+            } else if (node instanceof Element tag) {
                 switch (tag.tagName()) {
                     case "br":
                         builder.append("\n");
@@ -201,10 +255,15 @@ public class DocUtil {
         return result;
     }
 
-    public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {
+    public static List<P> parseHtml(String text, boolean indent) {
+        text = htmlToStr(text);
+        return parseText(text, indent);
+    }
+
+    public static ParseProgress parseHtmlNode(WordprocessingMLPackage word, String text, List<WordNode> bolds, List<WordNode> italics) {
         text = "<html><body>" + text.replace('\r', '\n') + "</body></html>";
         Element body = Jsoup.parse(text).body();
-        ParseProgress progress = new ParseProgress(true);
+        ParseProgress progress = new ParseProgress(true, word);
         parseHtmlNode(body, progress, genRpr(false, false), bolds, italics);
         return progress;
     }
@@ -214,7 +273,7 @@ public class DocUtil {
             if (node instanceof TextNode) {
                 String value = ((TextNode) node).getWholeText();
                 PassageNode passageNode = new PassageNode(value);
-                List<PassageNode> results = new ArrayList<PassageNode>() {{
+                List<PassageNode> results = new ArrayList<>() {{
                     this.add(passageNode);
                 }};
                 results = parsePassage(results, Collections.singletonList(new WordNode("\n")), word -> word.nextLine = true, false);
@@ -254,8 +313,7 @@ public class DocUtil {
                         progress.now.getContent().add(r);
                     }
                 }
-            } else if (node instanceof Element) {
-                Element tag = (Element) node;
+            } else if (node instanceof Element tag) {
                 switch (tag.tagName()) {
                     case "br":
                         progress.now = genP(true);
@@ -264,6 +322,8 @@ public class DocUtil {
                     case "strong":
                     case "div":
                     case "span":
+                    case "center":
+                    case "bdo":
                         parseHtmlNode(tag, progress, format, bolds, italics);
                         break;
                     case "p":
@@ -280,6 +340,15 @@ public class DocUtil {
                         break;
                     case "table":
                         parseTable(tag, progress, bolds, italics);
+                        break;
+                    case "img":
+                        String src = tag.attr("src");
+                        R r = genImage(progress.word, src);
+                        progress.now = genP(true);
+                        progress.nodes.add(progress.now);
+                        progress.now.getContent().add(r);
+                        progress.now = genP(true);
+                        progress.nodes.add(progress.now);
                         break;
                     default:
                         log.warn("未处理标签: {}", tag.tagName());
@@ -305,17 +374,22 @@ public class DocUtil {
                 Tc docTc = new Tc() {{
                     this.tcPr = new TcPr() {{
                         this.tcW = new TblWidth() {{
-                            this.w = new BigInteger(width);
-                            this.type = "dxa";
+                           this.w = new BigInteger(width);
+                           this.type = "dxa";
                         }};
                     }};
                 }};
-                ParseProgress tdProgress = new ParseProgress(false);
+                ParseProgress tdProgress = new ParseProgress(false, progress.word);
                 parseHtmlNode(td, tdProgress, DocUtil.genRpr(false, false), bolds, italics);
                 tdProgress.nodes = trim(tdProgress.nodes);
                 tdProgress.nodes.stream().parallel().forEach(it -> {
                     if (it instanceof P) {
-                        PPrBase.Ind indent = ((P) it).getPPr().getInd();
+                        PPr pPr = ((P) it).getPPr();
+                        PPrBase.Ind indent = pPr.getInd();
+                        if (indent == null) {
+                            indent = new PPrBase.Ind();
+                            pPr.setInd(indent);
+                        }
                         indent.setFirstLine(new BigInteger("315"));
                         indent.setFirstLineChars(new BigInteger("150"));
                     }
@@ -367,22 +441,24 @@ public class DocUtil {
         return results;
     }
 
-    @SuppressWarnings("unchecked")
     public static List<ContentAccessor> trim(List<ContentAccessor> list) {
         for (ContentAccessor node : list) {
             while (node instanceof P && !node.getContent().isEmpty()) {
-                Text text = ((JAXBElement<Text>) ((R) node.getContent().get(0)).getContent().get(0)).getValue();
-                String value = text.getValue();
-                if (value.trim().isEmpty()) {
-                    node.getContent().remove(0);
+                List<Object> content = node.getContent();
+                Object obj = ((JAXBElement<?>) (((R) content.get(0)).getContent().get(0))).getValue();
+                if (obj instanceof Text text) {
+                    String value = text.getValue();
+                    if (value.trim().isEmpty()) {
+                        content.remove(0);
+                    } else {
+                        text.setValue(StringUtils.stripFront(value, " \t"));
+                        break;
+                    }
                 } else {
-                    text.setValue(StringUtils.stripFront(value, " \t"));
                     break;
                 }
             }
-
         }
-
         return list.stream().parallel().filter(it -> !it.getContent().isEmpty()).collect(Collectors.toList());
     }
 
@@ -394,13 +470,15 @@ public class DocUtil {
 
     @Data
     public static class ParseProgress {
+        final WordprocessingMLPackage word;
         List<JSONObject> overWords = new ArrayList<>();
         List<ContentAccessor> nodes = new ArrayList<>();
         P now;
 
-        public ParseProgress(boolean indent) {
+        public ParseProgress(boolean indent, WordprocessingMLPackage word) {
             this.now = genP(indent);
             this.nodes.add(this.now);
+            this.word = word;
         }
     }
 

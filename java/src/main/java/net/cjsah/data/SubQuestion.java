@@ -2,7 +2,7 @@ package net.cjsah.data;
 
 import com.alibaba.fastjson2.JSONObject;
 import lombok.Data;
-import net.cjsah.main.doc.DocUtil;
+import net.cjsah.util.DocUtil;
 
 @Data
 public class SubQuestion {

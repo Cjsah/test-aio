@@ -1,6 +1,8 @@
 package net.cjsah.main;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -9,8 +11,22 @@ import java.util.regex.Pattern;
 
 public class Main {
     public static void main(String[] args) {
-        Supplier<Integer> supplier = () -> Integer.valueOf(1);
-        fun1(supplier);
+        List<Integer> list = new ArrayList<>();
+
+        list.add(1);
+        list.add(1);
+        list.add(1);
+        list.add(1);
+        list.add(1);
+        list.add(1);
+        list.add(1);
+
+        list = list.subList(0, 2);
+
+        System.out.println(list);
+
+//        Supplier<Integer> supplier = () -> Integer.valueOf(1);
+//        fun1(supplier);
 
 
     }

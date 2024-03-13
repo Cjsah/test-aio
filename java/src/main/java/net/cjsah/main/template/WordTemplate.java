@@ -7,7 +7,7 @@ import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.Article;
 import net.cjsah.data.WordNode;
-import net.cjsah.main.doc.DocUtil;
+import net.cjsah.util.DocUtil;
 import net.cjsah.util.JsonUtil;
 import org.docx4j.TraversalUtil;
 import org.docx4j.XmlUtils;
@@ -42,10 +42,10 @@ public class WordTemplate {
             String s = FileUtil.readUtf8String(new File("template.json"));
                 JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
 
-            JSONObject context = new JSONObject();
-            getContext(context);
-
             WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path, file));
+
+            JSONObject context = new JSONObject();
+            getContext(context, wordMLPackage);
 
             MainDocumentPart document = wordMLPackage.getMainDocumentPart();
 
@@ -101,7 +101,7 @@ public class WordTemplate {
     }
 
 
-    private static void getContext(JSONObject context) {
+    private static void getContext(JSONObject context, WordprocessingMLPackage wordMLPackage) {
         String jsonStr = FileUtil.readUtf8String(new File("article.json"));
         JSONObject json = JsonUtil.str2Obj(jsonStr, JSONObject.class);
         JSONArray questions = json.getJSONArray("questions");
@@ -138,15 +138,15 @@ public class WordTemplate {
             map.put("index", i + 1);
             map.put("num", article.getId());
             map.put("count", article.getWordCount()); // TODO 未知数据
-            map.put("answers", net.cjsah.main.doc.DocUtil.parseHtml(article.getParse(), false));
+            map.put("answers", DocUtil.parseHtml(article.getParse(), false));
             map.put("translate", Collections.emptyList()); // TODO 目前留空
 
-            net.cjsah.main.doc.DocUtil.ParseProgress progress = net.cjsah.main.doc.DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
+            DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(wordMLPackage, article.getTitle(), studyWords, overWords);
 
             List<ContentAccessor> passages = progress.getNodes();
             List<JSONObject> passageWords = progress.getOverWords();
 
-            passages = net.cjsah.main.doc.DocUtil.trim(passages);
+            passages = DocUtil.trim(passages);
 
             passages.addAll(DocUtil.parseText(article.getQuestions(), false));
 
@@ -169,15 +169,15 @@ public class WordTemplate {
 //        context.put("allow-article", 0);
 //        context.put("allow-answer", 0);
 
-//        context.put("allow-tip", -1);
-//        context.put("allow-word", -1);
-//        context.put("allow-article", -1);
-//        context.put("allow-answer", 0);
+        context.put("allow-tip", -1);
+        context.put("allow-word", -1);
+        context.put("allow-article", -1);
+        context.put("allow-answer", 0);
 
-        context.put("allow-tip", 0);
-        context.put("allow-word", 3);
-        context.put("allow-article", 0);
-        context.put("allow-answer", -1);
+//        context.put("allow-tip", 0);
+//        context.put("allow-word", 3);
+//        context.put("allow-article", 0);
+//        context.put("allow-answer", -1);
 
     }
 
