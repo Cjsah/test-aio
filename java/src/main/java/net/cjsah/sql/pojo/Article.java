@@ -15,6 +15,8 @@ public class Article implements Serializable {
     @TableId
     private Long id;
     private Long questionId;
+    private String noLevelWord    ;
+    private Integer noLevelWordNumber;
     private String level1Word;
     private Integer level1WordNumber;
     private String level2Word;

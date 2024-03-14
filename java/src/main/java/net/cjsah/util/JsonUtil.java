@@ -5,6 +5,8 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -23,7 +25,16 @@ public class JsonUtil {
     }
 
     public static <T> T str2Obj(String json, Class<T> clazz) {
-        return JSON.parseObject(json, new TypeReference<T>() {});
+        return JSON.parseObject(json, new TypeReference<T>() {
+        });
+    }
+
+    public static <T> T str2ObjGson(String json, Class<T> clazz) {
+        return GSON.fromJson(json, clazz);
+    }
+
+    public static <T> T obj2Bean(JsonElement json, Class<T> clazz) {
+        return GSON.fromJson(json, clazz);
     }
 
     public static <T> T str2ObjOld(String json, Class<T> clazz) {
