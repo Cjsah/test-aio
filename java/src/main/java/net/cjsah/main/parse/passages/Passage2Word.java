@@ -56,10 +56,10 @@ public class Passage2Word {
         System.out.println(wordCount);
         System.out.println(passages);
         for (Passage psg : passages) {
-            if (!HikariSql.update(psg.id, wordCount, difficulty)) {
-                log.error("更新失败, {}不存在", psg.id);
-                return false;
-            }
+//            if (!HikariSql.update(psg.id, wordCount, difficulty)) {
+//                log.error("更新失败, {}不存在", psg.id);
+//                return false;
+//            }
         }
         return true;
     }

@@ -72,7 +72,7 @@ public class Passage2 {
             throw new Exception("Empty Passage");
         }
         for (Passage psg : list) {
-            HikariSql.insertWords(filename, psg.id, psg.wordCount, difficulty, psg.content, JsonUtil.obj2Str(psg.questions), answers, psg.translate, JsonUtil.obj2Str(psg.words));
+//            HikariSql.insertWords(filename, psg.id, psg.wordCount, difficulty, psg.content, JsonUtil.obj2Str(psg.questions), answers, psg.translate, JsonUtil.obj2Str(psg.words));
         }
         return true;
     }

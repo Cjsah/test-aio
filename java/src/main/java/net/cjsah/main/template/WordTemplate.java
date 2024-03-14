@@ -40,12 +40,13 @@ public class WordTemplate {
 
         try {
             String s = FileUtil.readUtf8String(new File("template.json"));
-                JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
-
-            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path, file));
+            JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
 
             JSONObject context = new JSONObject();
-            getContext(context, wordMLPackage);
+            getContext(context);
+
+
+            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path, file));
 
             MainDocumentPart document = wordMLPackage.getMainDocumentPart();
 
@@ -90,6 +91,14 @@ public class WordTemplate {
 
             content.clear();
             content.addAll(newList);
+            if (context.containsKey("afters")) {
+                List<DocUtil.CustomConsumer> afters = (List<DocUtil.CustomConsumer>) context.get("afters");
+                for (DocUtil.CustomConsumer after : afters) {
+                    if (after.predicate.test(null)) {
+                        after.runner.run(wordMLPackage);
+                    }
+                }
+            }
 
             try (FileOutputStream fos = new FileOutputStream(path + "result.docx")) {
                 wordMLPackage.save(fos);
@@ -101,7 +110,7 @@ public class WordTemplate {
     }
 
 
-    private static void getContext(JSONObject context, WordprocessingMLPackage wordMLPackage) {
+    private static void getContext(JSONObject context) {
         String jsonStr = FileUtil.readUtf8String(new File("article.json"));
         JSONObject json = JsonUtil.str2Obj(jsonStr, JSONObject.class);
         JSONArray questions = json.getJSONArray("questions");
@@ -132,6 +141,7 @@ public class WordTemplate {
             map.put("translates", translateMap);
             words.add(map);
         }
+        List<DocUtil.CustomConsumer> afterList = new ArrayList<>();
         for (int i = 0; i < articlesData.size(); i++) {
             Article article = articlesData.get(i);
             JSONObject map = new JSONObject();
@@ -141,15 +151,17 @@ public class WordTemplate {
             map.put("answers", DocUtil.parseHtml(article.getParse(), false));
             map.put("translate", Collections.emptyList()); // TODO 目前留空
 
-            DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(wordMLPackage, article.getTitle(), studyWords, overWords);
+            DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
 
             List<ContentAccessor> passages = progress.getNodes();
             List<JSONObject> passageWords = progress.getOverWords();
+            List<DocUtil.CustomConsumer> afters = progress.getAfters();
 
             passages = DocUtil.trim(passages);
 
             passages.addAll(DocUtil.parseText(article.getQuestions(), false));
 
+            afterList.addAll(afters);
             map.put("passage", passages);
             map.put("words", passageWords);
             articles.add(map);
@@ -158,6 +170,7 @@ public class WordTemplate {
         context.put("words", words);
         context.put("spells", spells);
         context.put("passages", articles);
+        context.put("afters", afterList);
 
 //        context.put("allow-tip", -1);
 //        context.put("allow-word", 9);

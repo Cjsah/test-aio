@@ -55,10 +55,10 @@ public class Passage1Word {
             throw new Exception("Empty Passage");
         }
         for (Passage psg : passages) {
-            if (!HikariSql.update(psg.id, wordCount, difficulty)) {
-                log.error("更新失败, {}不存在", psg.id);
-                return false;
-            }
+//            if (!HikariSql.update(psg.id, wordCount, difficulty)) {
+//                log.error("更新失败, {}不存在", psg.id);
+//                return false;
+//            }
         }
         return true;
     }

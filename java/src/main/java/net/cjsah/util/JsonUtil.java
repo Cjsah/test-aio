@@ -12,9 +12,14 @@ import java.util.function.Function;
 
 public class JsonUtil {
     private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final Gson PRETTY_GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
     public static String obj2Str(Object obj) {
         return GSON.toJson(obj);
+    }
+
+    public static String obj2PrettyStr(Object obj) {
+        return PRETTY_GSON.toJson(obj);
     }
 
     public static <T> T str2Obj(String json, Class<T> clazz) {

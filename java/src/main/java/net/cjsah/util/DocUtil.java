@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.IllegalFormatFlagsException;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -180,7 +181,7 @@ public class DocUtil {
         }};
     }
 
-    private static R genImage(WordprocessingMLPackage word, String url) {
+    private static R genImage(ParseProgress progress, String url) {
         try {
             String link = "https://ai-english.shuhai777.cn";
             HttpRequest request = HttpRequest.get(link + url).timeout(10000);
@@ -188,23 +189,35 @@ public class DocUtil {
             try (HttpResponse response = request.execute()) {
                 body = response.bodyBytes();
             } catch (Exception e) {
-                log.error("Failed", e);
+                log.error("请求失败", e);
             }
-            if (body == null) throw new RuntimeException("下载失败");
-            BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(word, body);
-            word.getRelationshipsPart().getNextId();
-            String rldId = imagePart.getSourceRelationships().get(0).getId();
-            int id = Integer.parseInt(rldId.substring(3));
-            Inline inline = imagePart.createImageInline("img", "img", id, id, false, 7000);
+            if (body == null) {
+                log.warn("[{}]下载失败", url);
+                return null;
+            }
             R r = new R();
             r.setRPr(genRpr(false, false));
             Drawing drawing = new Drawing();
-            drawing.getAnchorOrInline().add(inline);
-            JAXBElement<Drawing> jaxbElement = genJAXBElement("drawing", Drawing.class, drawing);
+            JAXBElement<Drawing> jaxbElement = new JAXBElement<>(
+                    new QName("http://schemas.openxmlformats.org/wordprocessingml/2006/main", "drawing"),
+                    Drawing.class,
+                    R.class,
+                    drawing
+            );
             r.getContent().add(jaxbElement);
+
+            byte[] finalBody = body;
+            progress.afters.add(new CustomConsumer(process -> true, wordPackage -> {
+                BinaryPartAbstractImage imagePart = BinaryPartAbstractImage.createImagePart(wordPackage, finalBody);
+                String rldId = imagePart.getSourceRelationships().get(0).getId();
+                int id = Integer.parseInt(rldId.substring(3));
+                Inline inline = imagePart.createImageInline("img", "img", id, id, false, 7000);
+                drawing.getAnchorOrInline().add(inline);
+            }));
             return r;
-        }catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            log.error("图片下载失败", e);
+            return null;
         }
     }
 
@@ -236,7 +249,7 @@ public class DocUtil {
                         log.warn("未处理标签: {}", tag.tagName());
                         break;
                 }
-            }else {
+            } else if (!(node instanceof Comment)) {
                 throw new IllegalFormatFlagsException("未知标签: " + node.getClass());
             }
         }
@@ -260,10 +273,10 @@ public class DocUtil {
         return parseText(text, indent);
     }
 
-    public static ParseProgress parseHtmlNode(WordprocessingMLPackage word, String text, List<WordNode> bolds, List<WordNode> italics) {
+    public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {
         text = "<html><body>" + text.replace('\r', '\n') + "</body></html>";
         Element body = Jsoup.parse(text).body();
-        ParseProgress progress = new ParseProgress(true, word);
+        ParseProgress progress = new ParseProgress(true);
         parseHtmlNode(body, progress, genRpr(false, false), bolds, italics);
         return progress;
     }
@@ -343,12 +356,14 @@ public class DocUtil {
                         break;
                     case "img":
                         String src = tag.attr("src");
-                        R r = genImage(progress.word, src);
-                        progress.now = genP(true);
-                        progress.nodes.add(progress.now);
-                        progress.now.getContent().add(r);
-                        progress.now = genP(true);
-                        progress.nodes.add(progress.now);
+                        R r = genImage(progress, src);
+                        if (r != null) {
+                            progress.now = genP(true);
+                            progress.nodes.add(progress.now);
+                            progress.now.getContent().add(r);
+                            progress.now = genP(true);
+                            progress.nodes.add(progress.now);
+                        }
                         break;
                     default:
                         log.warn("未处理标签: {}", tag.tagName());
@@ -379,7 +394,7 @@ public class DocUtil {
                         }};
                     }};
                 }};
-                ParseProgress tdProgress = new ParseProgress(false, progress.word);
+                ParseProgress tdProgress = new ParseProgress(false);
                 parseHtmlNode(td, tdProgress, DocUtil.genRpr(false, false), bolds, italics);
                 tdProgress.nodes = trim(tdProgress.nodes);
                 tdProgress.nodes.stream().parallel().forEach(it -> {
@@ -470,15 +485,14 @@ public class DocUtil {
 
     @Data
     public static class ParseProgress {
-        final WordprocessingMLPackage word;
         List<JSONObject> overWords = new ArrayList<>();
         List<ContentAccessor> nodes = new ArrayList<>();
+        List<CustomConsumer> afters = new ArrayList<>();
         P now;
 
-        public ParseProgress(boolean indent, WordprocessingMLPackage word) {
+        public ParseProgress(boolean indent) {
             this.now = genP(indent);
             this.nodes.add(this.now);
-            this.word = word;
         }
     }
 
@@ -513,4 +527,15 @@ public class DocUtil {
         }
 
     }
+
+    @Data
+    public static class CustomConsumer {
+        public final Predicate<Object> predicate;
+        public final RunnableConsumer runner;
+    }
+
+    public interface RunnableConsumer {
+        void run(WordprocessingMLPackage wordPackage) throws Exception;
+    }
+
 }
