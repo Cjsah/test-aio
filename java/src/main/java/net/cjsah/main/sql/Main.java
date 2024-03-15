@@ -1,39 +1,20 @@
 package net.cjsah.main.sql;
 
-import cn.afterturn.easypoi.excel.ExcelExportUtil;
-import cn.afterturn.easypoi.excel.entity.ExportParams;
-import cn.afterturn.easypoi.excel.entity.enmus.ExcelType;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.json.JSONArray;
-import cn.hutool.json.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.IdData;
 import net.cjsah.sql.MybatisPlus;
-import net.cjsah.sql.mapper.ArticleMapper;
-import net.cjsah.sql.pojo.Article;
+import net.cjsah.sql.mapper.QuestionMapper;
+import net.cjsah.sql.pojo.Question;
 import net.cjsah.util.JsonUtil;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
-import org.apache.poi.hssf.usermodel.HSSFFont;
-import org.apache.poi.hssf.usermodel.HSSFRow;
-import org.apache.poi.hssf.usermodel.HSSFSheet;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Workbook;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.function.ToIntFunction;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Slf4j
 public class Main {
@@ -84,55 +65,96 @@ public class Main {
 //        FileUtil.writeUtf8String(str, out);
 
         File desc = new File("./test2.json");
-        File out = new File("./result.xlsx");
+        File out = new File("./test3.json");
 
+        int [] lexicons = {76, 82, 120, 130, 139, 146};
         String str = FileUtil.readUtf8String(desc);
         JsonArray jsonArrays = JsonUtil.str2ObjGson(str, JsonArray.class);
+        jsonArrays.remove(0);
         List<List<IdData>> questions = jsonArrays.asList().stream().parallel()
                 .map(it -> (it.getAsJsonArray().asList()).stream().parallel()
                         .map(node -> JsonUtil.obj2Bean(node.getAsJsonObject(), IdData.class))
                         .toList())
                 .toList();
 
+        int size = questions.size();
+
+        try (SqlSession session = MybatisPlus.session.openSession(true)) {
+            QuestionMapper mapper = session.getMapper(QuestionMapper.class);
+            List<Long> needDeletes = new ArrayList<>();
+
+            for (int i = 0; i < questions.size(); i++) {
+                log.info("进度: {}/{}", i + 1, size);
+                List<IdData> question = questions.get(i);
+                List<Long> qids = question.stream().parallel().map(IdData::getQid).toList();
+                log.info("共 {} 篇: {}", question.size(), qids);
+                List<Question> list = mapper.selectBatchIds(qids);
+
+//                list.stream().parallel().map(it -> it.getId() + " -> " + it.getParse().length()).forEach(System.out::println);
+
+                Optional<Question> max = list.stream().parallel().max(Comparator.comparingInt(node -> node.getParse().length()));
+                if (max.isPresent()) {
+                    Question reserve = max.get();
+                    list.remove(reserve);
+                    List<Long> removes = list.stream().parallel().map(Question::getId).toList();
+                    log.info("保留 {}, 删除 {}", reserve.getId(), removes);
+                    needDeletes.addAll(removes);
+                }
+            }
+
+            log.info("全部处理完成, 将要删除 {} 篇: {}", needDeletes.size(), needDeletes);
+
+            str = JsonUtil.obj2PrettyStr(needDeletes);
+            FileUtil.writeUtf8String(str, out);
+
+        }
+
+
+
+
+
+
+
+
 //        int sum = questions.stream().parallel().mapToInt(List::size).sum();
 
-        int rows = questions.size() - 1;
-
-        try (HSSFWorkbook workbook = new HSSFWorkbook()) {
-            HSSFSheet sheet = workbook.createSheet();
-            workbook.setSheetName(0, "共 " + rows + " 组(行)");
-            for (int i = 0; i < rows; i++) {
-                HSSFRow row = sheet.createRow(i);
-                List<IdData> col = questions.get(i + 1);
-                HSSFCell cell = row.createCell(0);
-                cell.setCellValue("数量: " + col.size());
-                for (int j = 0; j < col.size(); j++) {
-                    IdData data = col.get(j);
-                    cell = row.createCell(j + 1);
-                    cell.setCellValue(data.getQid());
-                }
-            }
-
-            List<IdData> values = questions.get(0);
-            sheet = workbook.createSheet();
-            workbook.setSheetName(1, "1组共 " + values.size() + " 个");
-
-            int rowIndex = 0;
-            int colIndex = 0;
-            HSSFRow row = sheet.createRow(rowIndex++);
-            for (IdData data : values) {
-                HSSFCell cell = row.createCell(colIndex++);
-                cell.setCellValue(data.getQid());
-                if (colIndex == 20) {
-                    row = sheet.createRow(rowIndex++);
-                    colIndex = 0;
-                }
-            }
-
-            workbook.write(out);
-        } catch (IOException e) {
-            log.error("Error", e);
-        }
+//        int rows = questions.size() - 1;
+//
+//        try (HSSFWorkbook workbook = new HSSFWorkbook()) {
+//            HSSFSheet sheet = workbook.createSheet();
+//            workbook.setSheetName(0, "共 " + rows + " 组(行)");
+//            for (int i = 0; i < rows; i++) {
+//                HSSFRow row = sheet.createRow(i);
+//                List<IdData> col = questions.get(i + 1);
+//                HSSFCell cell = row.createCell(0);
+//                cell.setCellValue("数量: " + col.size());
+//                for (int j = 0; j < col.size(); j++) {
+//                    IdData data = col.get(j);
+//                    cell = row.createCell(j + 1);
+//                    cell.setCellValue(data.getQid());
+//                }
+//            }
+//
+//            List<IdData> values = questions.get(0);
+//            sheet = workbook.createSheet();
+//            workbook.setSheetName(1, "1组共 " + values.size() + " 个");
+//
+//            int rowIndex = 0;
+//            int colIndex = 0;
+//            HSSFRow row = sheet.createRow(rowIndex++);
+//            for (IdData data : values) {
+//                HSSFCell cell = row.createCell(colIndex++);
+//                cell.setCellValue(data.getQid());
+//                if (colIndex == 20) {
+//                    row = sheet.createRow(rowIndex++);
+//                    colIndex = 0;
+//                }
+//            }
+//
+//            workbook.write(out);
+//        } catch (IOException e) {
+//            log.error("Error", e);
+//        }
 
 
     }

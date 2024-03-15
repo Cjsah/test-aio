@@ -5,5 +5,5 @@ import net.cjsah.sql.pojo.ArticleQuestion;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface ArticleMapper extends BaseMapper<ArticleQuestion> {
+public interface ArticleQuestionMapper extends BaseMapper<ArticleQuestion> {
 }
