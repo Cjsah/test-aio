@@ -1,11 +1,15 @@
 package net.cjsah.main.sql;
 
 import cn.hutool.core.io.FileUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.google.gson.JsonArray;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.IdData;
 import net.cjsah.sql.MybatisPlus;
+import net.cjsah.sql.mapper.ArticleMapper;
+import net.cjsah.sql.mapper.ArticleQuestionMapper;
 import net.cjsah.sql.mapper.QuestionMapper;
+import net.cjsah.sql.pojo.ArticleQuestion;
 import net.cjsah.sql.pojo.Question;
 import net.cjsah.util.JsonUtil;
 import org.apache.ibatis.session.SqlSession;
@@ -14,7 +18,9 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class Main {
@@ -64,53 +70,120 @@ public class Main {
 //        str = JsonUtil.obj2PrettyStr(questions);
 //        FileUtil.writeUtf8String(str, out);
 
-        File desc = new File("./test2.json");
-        File out = new File("./test3.json");
+//        File desc = new File("./test2.json");
+//        File out = new File("./test3.json");
+//
+//        int [] lexicons = {76, 82, 120, 130, 139, 146};
+//        String str = FileUtil.readUtf8String(desc);
+//        JsonArray jsonArrays = JsonUtil.str2ObjGson(str, JsonArray.class);
+//        jsonArrays.remove(0);
+//        List<List<IdData>> questions = jsonArrays.asList().stream().parallel()
+//                .map(it -> (it.getAsJsonArray().asList()).stream().parallel()
+//                        .map(node -> JsonUtil.obj2Bean(node.getAsJsonObject(), IdData.class))
+//                        .toList())
+//                .toList();
+//
+//        int size = questions.size();
+//
+//        try (SqlSession session = MybatisPlus.session.openSession(true)) {
+//            QuestionMapper mapper = session.getMapper(QuestionMapper.class);
+//            List<Long> needDeletes = new ArrayList<>();
+//
+//            for (int i = 0; i < questions.size(); i++) {
+//                log.info("进度: {}/{}", i + 1, size);
+//                List<IdData> question = questions.get(i);
+//                List<Long> qids = question.stream().parallel().map(IdData::getQid).toList();
+//                log.info("共 {} 篇: {}", question.size(), qids);
+//                List<Question> list = mapper.selectBatchIds(qids);
+//
+////                list.stream().parallel().map(it -> it.getId() + " -> " + it.getParse().length()).forEach(System.out::println);
+//
+//                Optional<Question> max = list.stream().parallel().max(Comparator.comparingInt(node -> node.getParse().length()));
+//                if (max.isPresent()) {
+//                    Question reserve = max.get();
+//                    list.remove(reserve);
+//                    List<Long> removes = list.stream().parallel().map(Question::getId).toList();
+//                    log.info("保留 {}, 删除 {}", reserve.getId(), removes);
+//                    needDeletes.addAll(removes);
+//                }
+//            }
+//
+//            log.info("全部处理完成, 将要删除 {} 篇: {}", needDeletes.size(), needDeletes);
+//
+//            str = JsonUtil.obj2PrettyStr(needDeletes);
+//            FileUtil.writeUtf8String(str, out);
+//
+//        }
 
-        int [] lexicons = {76, 82, 120, 130, 139, 146};
+
+        File desc = new File("./test3.json");
+//        File out = new File("./test3.json");
+
+        long[] lexicons = {76, 82, 120, 130, 139, 146};
         String str = FileUtil.readUtf8String(desc);
-        JsonArray jsonArrays = JsonUtil.str2ObjGson(str, JsonArray.class);
-        jsonArrays.remove(0);
-        List<List<IdData>> questions = jsonArrays.asList().stream().parallel()
-                .map(it -> (it.getAsJsonArray().asList()).stream().parallel()
-                        .map(node -> JsonUtil.obj2Bean(node.getAsJsonObject(), IdData.class))
-                        .toList())
-                .toList();
+        List<Long> ids = JsonUtil.str2List(str, long.class);
 
-        int size = questions.size();
+        int count = ids.size();
+        log.info("共 {} 篇", count);
 
         try (SqlSession session = MybatisPlus.session.openSession(true)) {
-            QuestionMapper mapper = session.getMapper(QuestionMapper.class);
-            List<Long> needDeletes = new ArrayList<>();
+            ArticleMapper articleMapper = session.getMapper(ArticleMapper.class);
+            ArticleQuestionMapper articleQuestionMapper = session.getMapper(ArticleQuestionMapper.class);
 
-            for (int i = 0; i < questions.size(); i++) {
-                log.info("进度: {}/{}", i + 1, size);
-                List<IdData> question = questions.get(i);
-                List<Long> qids = question.stream().parallel().map(IdData::getQid).toList();
-                log.info("共 {} 篇: {}", question.size(), qids);
-                List<Question> list = mapper.selectBatchIds(qids);
+            for (long lexicon : lexicons) {
+                log.info("正在处理文章: {}", lexicon);
+                List<ArticleQuestion> questions = articleQuestionMapper.selectList(new QueryWrapper<>() {{
+                    this.eq("lexicon_id", lexicon);
+                    this.in("question_id", ids);
+                }});
 
-//                list.stream().parallel().map(it -> it.getId() + " -> " + it.getParse().length()).forEach(System.out::println);
-
-                Optional<Question> max = list.stream().parallel().max(Comparator.comparingInt(node -> node.getParse().length()));
-                if (max.isPresent()) {
-                    Question reserve = max.get();
-                    list.remove(reserve);
-                    List<Long> removes = list.stream().parallel().map(Question::getId).toList();
-                    log.info("保留 {}, 删除 {}", reserve.getId(), removes);
-                    needDeletes.addAll(removes);
+                if (questions.isEmpty()) {
+                    continue;
                 }
+
+                System.out.println(questions.size());
+
+                Map<Integer, List<ArticleQuestion>> group = questions.stream().parallel()
+                        .filter(it -> it.getArticleLevel() != null)
+                        .collect(Collectors.groupingBy(ArticleQuestion::getArticleLevel));
+
+                System.out.println(group);
+
+                break;
             }
 
-            log.info("全部处理完成, 将要删除 {} 篇: {}", needDeletes.size(), needDeletes);
 
-            str = JsonUtil.obj2PrettyStr(needDeletes);
-            FileUtil.writeUtf8String(str, out);
+
+
+
+
+//            List<Long> needDeletes = new ArrayList<>();
+
+//            for (int i = 0; i < questions.size(); i++) {
+//                log.info("进度: {}/{}", i + 1, size);
+//                List<IdData> question = questions.get(i);
+//                List<Long> qids = question.stream().parallel().map(IdData::getQid).toList();
+//                log.info("共 {} 篇: {}", question.size(), qids);
+//                List<Question> list = mapper.selectBatchIds(qids);
+//
+////                list.stream().parallel().map(it -> it.getId() + " -> " + it.getParse().length()).forEach(System.out::println);
+//
+//                Optional<Question> max = list.stream().parallel().max(Comparator.comparingInt(node -> node.getParse().length()));
+//                if (max.isPresent()) {
+//                    Question reserve = max.get();
+//                    list.remove(reserve);
+//                    List<Long> removes = list.stream().parallel().map(Question::getId).toList();
+//                    log.info("保留 {}, 删除 {}", reserve.getId(), removes);
+//                    needDeletes.addAll(removes);
+//                }
+//            }
+//
+//            log.info("全部处理完成, 将要删除 {} 篇: {}", needDeletes.size(), needDeletes);
+//
+//            str = JsonUtil.obj2PrettyStr(needDeletes);
+//            FileUtil.writeUtf8String(str, out);
 
         }
-
-
-
 
 
 
