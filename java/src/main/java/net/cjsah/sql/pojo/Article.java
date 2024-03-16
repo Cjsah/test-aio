@@ -14,7 +14,10 @@ public class Article implements Serializable {
     private static final long serialVersionUID = 0L;
     @TableId
     private Long id;
-    private Integer lexiconId;
-    private Integer level;
     private Integer number;
+
+    public void reduceNumber(int count) {
+        this.number -= count;
+    }
+
 }

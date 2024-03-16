@@ -14,7 +14,6 @@ public class ArticleQuestion implements Serializable {
     private static final long serialVersionUID = 0L;
     @TableId
     private Long id;
-    private Long lexiconId;
-    private Long questionId;
     private Integer articleLevel;
+
 }

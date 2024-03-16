@@ -2,24 +2,21 @@ package net.cjsah.main.sql;
 
 import cn.hutool.core.io.FileUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.google.gson.JsonArray;
 import lombok.extern.slf4j.Slf4j;
-import net.cjsah.data.IdData;
 import net.cjsah.sql.MybatisPlus;
 import net.cjsah.sql.mapper.ArticleMapper;
 import net.cjsah.sql.mapper.ArticleQuestionMapper;
 import net.cjsah.sql.mapper.QuestionMapper;
+import net.cjsah.sql.pojo.Article;
 import net.cjsah.sql.pojo.ArticleQuestion;
-import net.cjsah.sql.pojo.Question;
 import net.cjsah.util.JsonUtil;
+import net.cjsah.util.StringUtil;
 import org.apache.ibatis.session.SqlSession;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -129,6 +126,7 @@ public class Main {
         try (SqlSession session = MybatisPlus.session.openSession(true)) {
             ArticleMapper articleMapper = session.getMapper(ArticleMapper.class);
             ArticleQuestionMapper articleQuestionMapper = session.getMapper(ArticleQuestionMapper.class);
+            QuestionMapper questionMapper = session.getMapper(QuestionMapper.class);
 
             for (long lexicon : lexicons) {
                 log.info("正在处理文章: {}", lexicon);
@@ -138,23 +136,48 @@ public class Main {
                 }});
 
                 if (questions.isEmpty()) {
+                    log.info("无需处理, 跳过");
                     continue;
                 }
 
-                System.out.println(questions.size());
+                log.info("将要删除 {} 篇文章", questions.size());
 
-                Map<Integer, List<ArticleQuestion>> group = questions.stream().parallel()
+                Map<Integer, Integer> levelCounts = new HashMap<>();
+                questions.stream().parallel()
                         .filter(it -> it.getArticleLevel() != null)
-                        .collect(Collectors.groupingBy(ArticleQuestion::getArticleLevel));
+                        .collect(Collectors.groupingBy(ArticleQuestion::getArticleLevel))
+                        .forEach((level, list) -> levelCounts.put(level, list.size()));
 
-                System.out.println(group);
+                String show = levelCounts.entrySet().stream().parallel()
+                        .map(it -> it.getKey() + "->" + it.getValue())
+                        .collect(Collectors.joining(", ", "[", "]"));
 
-                break;
+                log.info(show);
+
+                log.info("正在删除文章...");
+                List<Long> qids = questions.stream().parallel().map(ArticleQuestion::getId).toList();
+                int delCount = articleQuestionMapper.deleteBatchIds(qids);
+                log.info("删除了 {} 篇文章", delCount);
+
+                log.info("正在减少文章对应数量...");
+                for (Map.Entry<Integer, Integer> entry : levelCounts.entrySet()) {
+                    Article article = articleMapper.selectOne(new QueryWrapper<>() {{
+                        this.eq("lexicon_id", lexicon);
+                        this.eq("level", entry.getKey());
+                    }});
+
+                    article.reduceNumber(entry.getValue());
+
+                    articleMapper.updateById(article);
+                }
+
+                log.info("本篇完成");
             }
 
+            log.info("学生文章删除完成, 正在删除总文章库...");
 
-
-
+            int delCount = questionMapper.deleteBatchIds(ids);
+            log.info("删除了 {} 篇文章", delCount);
 
 
 //            List<Long> needDeletes = new ArrayList<>();

@@ -16,7 +16,7 @@ import java.util.stream.Collector;
 public class StringUtil {
 
     public static Collector<CharSequence, StringBuilder, String> join() {
-        return new Collector<CharSequence, StringBuilder, String>() {
+        return new Collector<>() {
             @Override
             public Supplier<StringBuilder> supplier() {
                 return () -> {
