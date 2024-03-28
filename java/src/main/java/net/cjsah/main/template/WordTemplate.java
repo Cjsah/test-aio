@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONObject;
 import jakarta.xml.bind.JAXBException;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.Article;
+import net.cjsah.data.SubQuestion;
 import net.cjsah.data.WordNode;
 import net.cjsah.util.DocUtil;
 import net.cjsah.util.JsonUtil;
@@ -19,7 +20,12 @@ import org.docx4j.wml.Tbl;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -32,11 +38,12 @@ public class WordTemplate {
     public static void main(String[] args) {
         WordTemplate template = new WordTemplate();
 //        template.generate("study-all.docx");
-        template.generate("study-template.docx");
+        template.generate();
     }
 
-    private void generate(String file) {
+    private void generate() {
         String path = "./";
+        String template = "study-template.docx";
 
         try {
             String s = FileUtil.readUtf8String(new File("template.json"));
@@ -46,7 +53,7 @@ public class WordTemplate {
             getContext(context);
 
 
-            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path, file));
+            WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path, template));
 
             MainDocumentPart document = wordMLPackage.getMainDocumentPart();
 
@@ -113,6 +120,9 @@ public class WordTemplate {
     private static void getContext(JSONObject context) {
         String jsonStr = FileUtil.readUtf8String(new File("article.json"));
         JSONObject json = JsonUtil.str2Obj(jsonStr, JSONObject.class);
+
+        json = json.getJSONObject("data");
+
         JSONArray questions = json.getJSONArray("questions");
         JSONArray wordsArray = json.getJSONArray("studyWordList");
         JSONArray overWordsArray = json.getJSONArray("overWords");
@@ -147,23 +157,32 @@ public class WordTemplate {
             JSONObject map = new JSONObject();
             map.put("index", i + 1);
             map.put("num", article.getId());
-            map.put("count", article.getWordCount()); // TODO 未知数据
-            map.put("answers", DocUtil.parseHtml(article.getParse(), false));
-            map.put("translate", Collections.emptyList()); // TODO 目前留空
+            map.put("count", article.getWordCount());
+            map.put("translate", Collections.emptyList());
 
-            DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
+            DocUtil.ParseProgress title = DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
+            List<DocUtil.ParseProgress> subQuestions = article.getQuestions().stream().parallel().map(SubQuestion::parse).toList();
+            DocUtil.ParseProgress answer = DocUtil.parseHtmlNode(article.getAnswer());
+            DocUtil.ParseProgress parse = DocUtil.parseHtmlNode(article.getParse());
 
-            List<ContentAccessor> passages = progress.getNodes();
-            List<JSONObject> passageWords = progress.getOverWords();
-            List<DocUtil.CustomConsumer> afters = progress.getAfters();
+            List<ContentAccessor> passages = title.getNodes();
 
             passages = DocUtil.trim(passages);
+            passages.add(DocUtil.genP(""));
 
-            passages.addAll(DocUtil.parseText(article.getQuestions(), false));
+            for (DocUtil.ParseProgress question : subQuestions) {
+                passages.addAll(question.getNodes());
+                afterList.addAll(question.getAfters());
+            }
 
-            afterList.addAll(afters);
+            afterList.addAll(title.getAfters());
+            afterList.addAll(answer.getAfters());
+            afterList.addAll(parse.getAfters());
+            map.put("answer", answer.getNodes());
+            map.put("parse", parse.getNodes());
+
             map.put("passage", passages);
-            map.put("words", passageWords);
+            map.put("words", title.getOverWords());
             articles.add(map);
         }
 
@@ -172,25 +191,29 @@ public class WordTemplate {
         context.put("passages", articles);
         context.put("afters", afterList);
 
+        // 只有文章
 //        context.put("allow-tip", -1);
 //        context.put("allow-word", 9);
 //        context.put("allow-article", -1);
 //        context.put("allow-answer", 0);
 
+        // 只有单词
 //        context.put("allow-tip", -1);
 //        context.put("allow-word", -1);
 //        context.put("allow-article", 0);
 //        context.put("allow-answer", 0);
 
-        context.put("allow-tip", -1);
-        context.put("allow-word", -1);
-        context.put("allow-article", -1);
-        context.put("allow-answer", 0);
+        // 全都有
+//        context.put("allow-tip", -1);
+//        context.put("allow-word", -1);
+//        context.put("allow-article", -1);
+//        context.put("allow-answer", 0);
 
-//        context.put("allow-tip", 0);
-//        context.put("allow-word", 3);
-//        context.put("allow-article", 0);
-//        context.put("allow-answer", -1);
+        // 答案
+        context.put("allow-tip", 0);
+        context.put("allow-word", 3);
+        context.put("allow-article", 0);
+        context.put("allow-answer", -1);
 
     }
 

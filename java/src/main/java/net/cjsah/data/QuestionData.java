@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class QuestionData {
-    public static final Node EMPTY = new Node(false, "");
+    public static final Node EMPTY = Node.of("");
 
     @Data
     public static class Node {
@@ -21,6 +21,15 @@ public final class QuestionData {
         public boolean isEmpty() {
             return this.value.isEmpty();
         }
+
+        public static Node of(String value) {
+            return new Node(false, value);
+        }
+
+        public static Node image(String value) {
+            return new Node(true, value);
+        }
+
     }
 
     @Data

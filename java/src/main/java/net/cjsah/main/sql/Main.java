@@ -116,7 +116,7 @@ public class Main {
         File desc = new File("./test3.json");
 //        File out = new File("./test3.json");
 
-        long[] lexicons = {76, 82, 120, 130, 139, 146};
+        long[] lexicons = {144, 145};
         String str = FileUtil.readUtf8String(desc);
         List<Long> ids = JsonUtil.str2List(str, long.class);
 

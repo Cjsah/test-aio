@@ -45,7 +45,6 @@ import javax.xml.namespace.QName;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.IllegalFormatFlagsException;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -221,41 +220,6 @@ public class DocUtil {
         }
     }
 
-    public static String htmlToStr(String passage) {
-        passage = "<html><body>" + passage.replace('\r', '\n') + "</body></html>";
-        Element body = Jsoup.parse(passage).body();
-        return DocUtil.htmlToStr(body);
-    }
-
-    public static String htmlToStr(Element element) {
-        StringBuilder builder = new StringBuilder();
-        for (Node node : element.childNodes()) {
-            if (node instanceof TextNode) {
-                String value = ((TextNode) node).getWholeText();
-                builder.append(value);
-            } else if (node instanceof Element tag) {
-                switch (tag.tagName()) {
-                    case "br":
-                        builder.append("\n");
-                        break;
-                    case "strong":
-                    case "p":
-                    case "u":
-                    case "div":
-                    case "span":
-                        builder.append(htmlToStr(tag));
-                        break;
-                    default:
-                        log.warn("未处理标签: {}", tag.tagName());
-                        break;
-                }
-            } else if (!(node instanceof Comment)) {
-                throw new IllegalFormatFlagsException("未知标签: " + node.getClass());
-            }
-        }
-        return builder.toString();
-    }
-
     public static List<P> parseText(String text, boolean indent) {
         List<P> result = new ArrayList<>();
         for (String node : text.split("\n")) {
@@ -267,14 +231,12 @@ public class DocUtil {
         }
         return result;
     }
-
-    public static List<P> parseHtml(String text, boolean indent) {
-        text = htmlToStr(text);
-        return parseText(text, indent);
+    public static ParseProgress parseHtmlNode(String text) {
+        return parseHtmlNode(text, Collections.emptyList(), Collections.emptyList());
     }
 
     public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {
-        text = "<html><body>" + text.replace('\r', '\n') + "</body></html>";
+        text = "<html><body>" + text.replaceAll("(\r| \r )", "") + "</body></html>";
         Element body = Jsoup.parse(text).body();
         ParseProgress progress = new ParseProgress(true);
         parseHtmlNode(body, progress, genRpr(false, false), bolds, italics);
@@ -327,12 +289,17 @@ public class DocUtil {
                     }
                 }
             } else if (node instanceof Element tag) {
+                RPr rPr;
                 switch (tag.tagName()) {
                     case "br":
                         progress.now = genP(true);
                         progress.nodes.add(progress.now);
                         break;
                     case "strong":
+                        rPr = copyRpr(format);
+                        setBold(rPr);
+                        parseHtmlNode(tag, progress, rPr, bolds, italics);
+                        break;
                     case "div":
                     case "span":
                     case "center":
@@ -347,7 +314,7 @@ public class DocUtil {
                         progress.nodes.add(progress.now);
                         break;
                     case "u":
-                        RPr rPr = copyRpr(format);
+                        rPr = copyRpr(format);
                         setUnderline(rPr);
                         parseHtmlNode(tag, progress, rPr, Collections.emptyList(), Collections.emptyList());
                         break;

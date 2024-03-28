@@ -110,7 +110,14 @@ public class WordTableTemplate {
         content.addAll((List<?>) passage.get("passage"));
     }
 
+    @SuppressWarnings("unchecked")
     public static void parsePassageTranslate(Tbl table, List<JSONObject> words) throws JAXBException {
+        if (words.isEmpty()) {
+            List<Object> content = ((JAXBElement<Tc>) ((Tr) table.getContent().get(0)).getContent().get(0)).getValue().getContent();
+            content.clear();
+            content.add(DocUtil.genP(""));
+            return;
+        }
         Tr tr = (Tr) table.getContent().get(0);
         String template = XmlUtils.marshaltoString(tr);
         table.getContent().clear();
@@ -136,7 +143,8 @@ public class WordTableTemplate {
             DocUtil.setBold(p);
 
             trList.add(p);
-            trList.addAll((List<?>) passage.get("answers"));
+            trList.addAll((List<?>) passage.get("answer"));
+            trList.addAll((List<?>) passage.get("parse"));
         }
     }
 
@@ -177,25 +185,5 @@ public class WordTableTemplate {
                     }));
                 });
 
-    }
-
-    @SneakyThrows
-    private static String matcherReplace(Matcher matcher, Function<String, String> replacer) {
-        boolean result = matcher.find();
-        if (result) {
-            StringBuilder sb = new StringBuilder();
-            do {
-                String replacement = replacer.apply(matcher.group());
-                matcher.appendReplacement(sb, replacement);
-                result = matcher.find();
-            } while (result);
-            matcher.appendTail(sb);
-            return sb.toString();
-        }
-        Field text = matcher.getClass().getDeclaredField("text");
-        text.setAccessible(true);
-        Object value = text.get(matcher);
-        text.setAccessible(false);
-        return value.toString();
     }
 }

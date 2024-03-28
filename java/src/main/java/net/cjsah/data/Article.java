@@ -16,19 +16,18 @@ public class Article {
     private final String knowledge;
     private final String parse;
     private final String answer;
-    private final String questions;
+    private final List<SubQuestion> questions;
     private final Integer wordCount;
 
     public static Article fromApiJson(JSONObject json) {
-        List<SubQuestion> subQuestions = JsonUtil.jsonGetList(json, "subquestions", SubQuestion::fromJson);
         return new Article(
                 json.getLongValue("id"),
                 json.getString("title"),
                 json.getString("qtype"),
                 json.getString("knowledges"),
-                DocUtil.htmlToStr(json.getString("parse")),
-                DocUtil.htmlToStr(json.getString("answer2")),
-                subQuestions.stream().parallel().map(SubQuestion::getQuestion).collect(Collectors.joining("")),
+                json.getString("parse"),
+                json.getString("answer2"),
+                JsonUtil.jsonGetList(json, "subquestions", SubQuestion::fromJson),
                 json.getIntValue("wordNumber")
         );
     }

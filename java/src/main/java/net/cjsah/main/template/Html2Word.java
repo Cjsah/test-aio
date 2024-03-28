@@ -14,6 +14,7 @@ import freemarker.template.Configuration;
 import freemarker.template.DefaultObjectWrapperBuilder;
 import freemarker.template.TemplateException;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.QuestionData;
 
 import java.io.File;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public class Html2Word {
 
     private static final Configuration configuration = new Configuration(Configuration.VERSION_2_3_32);
@@ -35,12 +37,12 @@ public class Html2Word {
         DefaultObjectWrapperBuilder builder = new DefaultObjectWrapperBuilder(Configuration.VERSION_2_3_32);
         configuration.setDefaultEncoding("UTF-8");
         configuration.setObjectWrapper(builder.build());
-        configuration.setTemplateLoader(new FileTemplateLoader(new File("./math/template/")));
+        configuration.setTemplateLoader(new FileTemplateLoader(new File("./template/")));
 
         FontProvider fontProvider = new FontProvider(new FontSet(), "SimSun");
-        System.out.println(fontProvider.addFont("./math/template/font/simsun-b.ttc,6"));
-//        System.out.println(fontProvider.addFont("./math/template/font/simsunbd.otf"));
-        System.out.println(fontProvider.addFont("./math/template/font/nerd.otf"));
+        fontProvider.addFont("/fonts/simsun.ttc,0");
+        fontProvider.addFont("/fonts/simsunbd.otf");
+        fontProvider.addFont("/fonts/nerd.otf");
         fontProvider.addStandardPdfFonts();
         props.setFontProvider(fontProvider);
         props.setCharset("utf-8");
@@ -48,13 +50,10 @@ public class Html2Word {
         MathRecord record = new MathRecord(1, "Test Pdf 标题测试");
 
         Html2Word template = new Html2Word();
-        template.generate(record, true);
-
-        System.out.println(record.questionFile);
-        System.out.println(record.answerFile);
+        template.generate(record);
     }
 
-    public void generate(MathRecord record, boolean genAnswer) {
+    private void generate(MathRecord record) {
         try {
             List<PdfData> formulaShow = new ArrayList<>();
             List<PdfData> formulaMem = new ArrayList<>();
@@ -62,162 +61,118 @@ public class Html2Word {
             List<PdfData> exercises = new ArrayList<>();
 
 
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(false, "ae913d52-c459-48a2-b6b4-4e5a7b67f02a"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaShow.add(new PdfData(
-                    0,
-                    new QuestionData.Node(false, "test text"),
-                    QuestionData.EMPTY,
-                    ""
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")));
+            formulaShow.add(new PdfData(QuestionData.Node.of("test text")));
+
+            formulaMem.add(new PdfData(
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
             formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
             formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
             formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
+                    QuestionData.Node.of("aaa"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
             formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(false, "bbb"),
-                    QuestionData.EMPTY,
-                    ""
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.of("bbb")
             ));
             formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
             formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
-            ));
-            formulaMem.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    QuestionData.EMPTY,
-                    ""
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
 
             exampleQuestions.add(new PdfData(
-                    0,
-                    new QuestionData.Node(true, "ae913d52-c459-48a2-b6b4-4e5a7b67f02a"),
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    "ccc"
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d"),
+                    QuestionData.Node.image("177c6531dbd0400781da7add70e5fa3d")
             ));
             exampleQuestions.add(new PdfData(
-                    0,
                     new QuestionData.Node(false, "aaa"),
-                    new QuestionData.Node(false, "bbb"),
-                    "ccc"
+                    new QuestionData.Node(false, "bbb")
             ));
+
             exercises.add(new PdfData(
-                    10,
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    new QuestionData.Node(true, "f38694d3-56e2-4b16-b0dd-f8e37e28f6b3"),
-                    "ccc"
+                    1,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
             ));
             exercises.add(new PdfData(
                     2,
-                    new QuestionData.Node(false, "aaa"),
-                    new QuestionData.Node(false, "bbb"),
-                    "ccc"
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
             ));
             exercises.add(new PdfData(
                     3,
-                    new QuestionData.Node(false, "aaa"),
-                    new QuestionData.Node(false, "bbb"),
-                    "ccc<br/>ccc<br/>ccc<br/>ccc<br/>ccc<br/>ccc"
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    4,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    5,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    6,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    7,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    8,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    9,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
+            ));
+            exercises.add(new PdfData(
+                    10,
+                    QuestionData.Node.of("汉语"),
+                    QuestionData.Node.of("英语"),
+                    QuestionData.Node.of("提示词")
             ));
 
             Map<String, Object> context = new HashMap<>();
@@ -230,14 +185,12 @@ public class Html2Word {
             context.put("formula_mem", formulaMem);
             context.put("example_questions", exampleQuestions);
             context.put("exercises", exercises);
+            context.put("url", "http://localhost:8899");
 
-            record.setQuestionFile(this.generate(record, "question.ftl", context, true));
-            if (genAnswer) {
-                record.setAnswerFile(this.generate(record, "answer.ftl", context, false));
-
-            }
+            System.out.println(this.generate(record, "grammar-question.ftl", context, true));
+            System.out.println(this.generate(record, "grammar-answer.ftl", context, false));
         } catch (IOException | TemplateException e) {
-            e.printStackTrace();
+            log.error("Err", e);
         }
     }
 
@@ -248,7 +201,7 @@ public class Html2Word {
 
         String uuid = IdUtil.fastUUID();
         String filename = String.format("No.%07d-%s-%s.", record.getId(), record.getName(), question ? "试题" : "答案");
-        String path = "./math/template/" + filename;
+        String path = "./" + filename;
 
         try (FileOutputStream fos = new FileOutputStream(path + "html")) {
             fos.write(writer.toString().getBytes());
@@ -288,7 +241,44 @@ public class Html2Word {
         private final int num;
         private final QuestionData.Node question;
         private final QuestionData.Node answer;
-        private final String input;
+        private final QuestionData.Node tip;
+
+        public PdfData(int num, QuestionData.Node question, QuestionData.Node answer, QuestionData.Node tip) {
+            this.num = num;
+            this.question = question;
+            this.answer = answer;
+            this.tip = tip;
+        }
+
+        public PdfData(int num, QuestionData.Node question, QuestionData.Node answer) {
+            this.num = num;
+            this.question = question;
+            this.answer = answer;
+            this.tip = QuestionData.EMPTY;
+        }
+
+        public PdfData(QuestionData.Node question, QuestionData.Node answer) {
+            this.question = question;
+            this.answer = answer;
+            this.num = 0;
+            this.tip = QuestionData.EMPTY;
+        }
+
+        public PdfData(int num, QuestionData.Node question) {
+            this.num = num;
+            this.question = question;
+            this.answer = QuestionData.EMPTY;
+            this.tip = QuestionData.EMPTY;
+        }
+
+        public PdfData(QuestionData.Node question) {
+            this.question = question;
+            this.answer = QuestionData.EMPTY;
+            this.tip = QuestionData.EMPTY;
+            this.num = 0;
+        }
+
+
     }
 
 }

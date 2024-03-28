@@ -3,11 +3,12 @@ package net.cjsah.data;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.Data;
 import net.cjsah.util.DocUtil;
+import org.docx4j.wml.P;
+
+import java.util.List;
 
 @Data
 public class SubQuestion {
-    private final long id;
-    private final long parent;
     private final String title;
     private final String optionA;
     private final String optionB;
@@ -16,8 +17,6 @@ public class SubQuestion {
 
     public static SubQuestion fromJson(JSONObject json) {
         return new SubQuestion(
-                json.getLongValue("id"),
-                json.getLongValue("pid"),
                 json.getString("title"),
                 json.getString("optionA"),
                 json.getString("optionB"),
@@ -26,25 +25,16 @@ public class SubQuestion {
         );
     }
 
-    public String getQuestion() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(DocUtil.htmlToStr(this.title).trim());
-        builder.append('\n');
-        this.appendOption(builder, this.optionA, 'A');
-        this.appendOption(builder, this.optionB, 'B');
-        this.appendOption(builder, this.optionC, 'C');
-        this.appendOption(builder, this.optionD, 'D');
-        builder.append('\n');
-        return builder.toString();
+    public DocUtil.ParseProgress parse() {
+        DocUtil.ParseProgress progress = DocUtil.parseHtmlNode(this.title);
+        progress.getNodes().addAll(appendOption(this.optionA, 'A'));
+        progress.getNodes().addAll(appendOption(this.optionB, 'B'));
+        progress.getNodes().addAll(appendOption(this.optionC, 'C'));
+        progress.getNodes().addAll(appendOption(this.optionD, 'D'));
+        return progress;
     }
 
-    private void appendOption(StringBuilder builder, String option, char select) {
-        if (!option.trim().isEmpty()) {
-            option = DocUtil.htmlToStr(option).trim();
-            builder.append(select);
-            builder.append(". ");
-            builder.append(option);
-            builder.append('\n');
-        }
+    private static List<P> appendOption(String option, char select) {
+        return DocUtil.parseText(select + ". " + option, false);
     }
 }
