@@ -1,5 +1,5 @@
 # import base
-import re
+import re, json
 
 # with open('sql/lexicon_detail.sql', 'r', encoding='utf-8') as f:
 #     lexicon = f.read()
@@ -9,8 +9,15 @@ import re
 # with open('sql/lexicon_detail.sql', 'w+', encoding='utf-8') as f:
 #     f.write(lexicon)
 
-value = 'article.getLevel{index}Word(),\narticle.getLevel{index}WordNumber(),\n'
 
-value = [value.format(index=i+1) for i in range(20)]
-value = ''.join(value)
-print(value)
+with open('test.txt', 'r', encoding='utf-8') as f:
+    lines = f.read().splitlines()
+
+print(lines)
+
+words = []
+for i, line in enumerate(lines):
+    if i % 4 == 0:
+        words.append([line, lines[i+1], lines[i+2], lines[i+3]])
+
+print(json.dumps(words, ensure_ascii=False))

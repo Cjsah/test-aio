@@ -127,6 +127,9 @@ public class WordTemplate {
         JSONArray wordsArray = json.getJSONArray("studyWordList");
         JSONArray overWordsArray = json.getJSONArray("overWords");
 
+        if (wordsArray == null) wordsArray = new JSONArray();
+        if (overWordsArray == null) overWordsArray = new JSONArray();
+
         List<WordNode> studyWords = wordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<WordNode> overWords = overWordsArray.stream().parallel().map(it -> WordNode.fromJson((JSONObject) it)).toList();
         List<Article> articlesData = questions.stream().parallel().map(it -> Article.fromApiJson((JSONObject) it)).toList();
@@ -162,8 +165,8 @@ public class WordTemplate {
 
             DocUtil.ParseProgress title = DocUtil.parseHtmlNode(article.getTitle(), studyWords, overWords);
             List<DocUtil.ParseProgress> subQuestions = article.getQuestions().stream().parallel().map(SubQuestion::parse).toList();
-            DocUtil.ParseProgress answer = DocUtil.parseHtmlNode(article.getAnswer());
-            DocUtil.ParseProgress parse = DocUtil.parseHtmlNode(article.getParse());
+            DocUtil.ParseProgress answer = DocUtil.parseHtmlNode(article.getAnswer(), true);
+            DocUtil.ParseProgress parse = DocUtil.parseHtmlNode(article.getParse(), true);
 
             List<ContentAccessor> passages = title.getNodes();
 
@@ -204,16 +207,16 @@ public class WordTemplate {
 //        context.put("allow-answer", 0);
 
         // 全都有
-//        context.put("allow-tip", -1);
-//        context.put("allow-word", -1);
-//        context.put("allow-article", -1);
-//        context.put("allow-answer", 0);
+        context.put("allow-tip", -1);
+        context.put("allow-word", -1);
+        context.put("allow-article", -1);
+        context.put("allow-answer", 0);
 
         // 答案
-        context.put("allow-tip", 0);
-        context.put("allow-word", 3);
-        context.put("allow-article", 0);
-        context.put("allow-answer", -1);
+//        context.put("allow-tip", 0);
+//        context.put("allow-word", 3);
+//        context.put("allow-article", 0);
+//        context.put("allow-answer", -1);
 
     }
 

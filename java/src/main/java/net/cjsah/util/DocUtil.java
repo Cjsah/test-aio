@@ -231,19 +231,32 @@ public class DocUtil {
         }
         return result;
     }
-    public static ParseProgress parseHtmlNode(String text) {
-        return parseHtmlNode(text, Collections.emptyList(), Collections.emptyList());
+
+    public static ParseProgress parseHtmlNode(String text, boolean indent) {
+        List<WordNode> nodes = Collections.emptyList();
+        return startParse(text, nodes, nodes, indent);
     }
 
-    public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {
-        text = "<html><body>" + text.replaceAll("(\r| \r )", "") + "</body></html>";
-        Element body = Jsoup.parse(text).body();
-        ParseProgress progress = new ParseProgress(true);
-        parseHtmlNode(body, progress, genRpr(false, false), bolds, italics);
+    public static ParseProgress parseHtmlNodeWithTrim(String text, boolean indent) {
+        List<WordNode> nodes = Collections.emptyList();
+        ParseProgress progress = startParse(text, nodes, nodes, indent);
+        progress.nodes = DocUtil.trim(progress.nodes);
         return progress;
     }
 
-    private static void parseHtmlNode(Element element, ParseProgress progress, RPr format, List<WordNode> bolds, List<WordNode> italics) {
+    public static ParseProgress parseHtmlNode(String text, List<WordNode> bolds, List<WordNode> italics) {
+        return startParse(text, bolds, italics, true);
+    }
+
+    private static ParseProgress startParse(String text, List<WordNode> bolds, List<WordNode> italics, boolean indent) {
+        text = "<html><body>" + text.replaceAll("(\r| \r )", "") + "</body></html>";
+        Element body = Jsoup.parse(text).body();
+        ParseProgress progress = new ParseProgress(indent);
+        parseHtmlNode(body, progress, genRpr(false, false), bolds, italics, indent);
+        return progress;
+    }
+
+    private static void parseHtmlNode(Element element, ParseProgress progress, RPr format, List<WordNode> bolds, List<WordNode> italics, boolean indent) {
         for (Node node : element.childNodes()) {
             if (node instanceof TextNode) {
                 String value = ((TextNode) node).getWholeText();
@@ -298,28 +311,28 @@ public class DocUtil {
                     case "strong":
                         rPr = copyRpr(format);
                         setBold(rPr);
-                        parseHtmlNode(tag, progress, rPr, bolds, italics);
+                        parseHtmlNode(tag, progress, rPr, bolds, italics, indent);
                         break;
                     case "div":
                     case "span":
                     case "center":
                     case "bdo":
-                        parseHtmlNode(tag, progress, format, bolds, italics);
+                        parseHtmlNode(tag, progress, format, bolds, italics, indent);
                         break;
                     case "p":
                         progress.now = genP(true);
                         progress.nodes.add(progress.now);
-                        parseHtmlNode(tag, progress, format, bolds, italics);
+                        parseHtmlNode(tag, progress, format, bolds, italics, indent);
                         progress.now = genP(true);
                         progress.nodes.add(progress.now);
                         break;
                     case "u":
                         rPr = copyRpr(format);
                         setUnderline(rPr);
-                        parseHtmlNode(tag, progress, rPr, Collections.emptyList(), Collections.emptyList());
+                        parseHtmlNode(tag, progress, rPr, Collections.emptyList(), Collections.emptyList(), indent);
                         break;
                     case "table":
-                        parseTable(tag, progress, bolds, italics);
+                        parseTable(tag, progress, bolds, italics, indent);
                         break;
                     case "img":
                         String src = tag.attr("src");
@@ -342,7 +355,7 @@ public class DocUtil {
         }
     }
 
-    private static void parseTable(Element table, ParseProgress progress, List<WordNode> bolds, List<WordNode> italics) {
+    private static void parseTable(Element table, ParseProgress progress, List<WordNode> bolds, List<WordNode> italics, boolean indent) {
         Elements trs = table.getElementsByTag("tr");
         if (trs.isEmpty()) return;
         int cows = 0;
@@ -362,18 +375,18 @@ public class DocUtil {
                     }};
                 }};
                 ParseProgress tdProgress = new ParseProgress(false);
-                parseHtmlNode(td, tdProgress, DocUtil.genRpr(false, false), bolds, italics);
+                parseHtmlNode(td, tdProgress, DocUtil.genRpr(false, false), bolds, italics, indent);
                 tdProgress.nodes = trim(tdProgress.nodes);
                 tdProgress.nodes.stream().parallel().forEach(it -> {
                     if (it instanceof P) {
                         PPr pPr = ((P) it).getPPr();
-                        PPrBase.Ind indent = pPr.getInd();
-                        if (indent == null) {
-                            indent = new PPrBase.Ind();
-                            pPr.setInd(indent);
+                        PPrBase.Ind ind = pPr.getInd();
+                        if (ind == null) {
+                            ind = new PPrBase.Ind();
+                            pPr.setInd(ind);
                         }
-                        indent.setFirstLine(new BigInteger("315"));
-                        indent.setFirstLineChars(new BigInteger("150"));
+                        ind.setFirstLine(new BigInteger("315"));
+                        ind.setFirstLineChars(new BigInteger("150"));
                     }
                 });
                 docTc.getContent().addAll(tdProgress.nodes);
