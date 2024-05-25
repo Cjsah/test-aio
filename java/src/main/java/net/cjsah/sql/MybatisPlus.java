@@ -81,10 +81,10 @@ public class MybatisPlus {
      */
     private static DataSource initDataSource() {
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://192.168.0.10:3306/passage?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
+        dataSource.setJdbcUrl("jdbc:mysql://192.168.0.11:3306/app?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
         dataSource.setUsername("root");
-        dataSource.setPassword("mysql");
+        dataSource.setPassword("_aYmBF@lgn!H*FE9RXQWMo2k*hye,7Rq");
         dataSource.setIdleTimeout(60000);
         dataSource.setAutoCommit(true);
         dataSource.setMaximumPoolSize(20);

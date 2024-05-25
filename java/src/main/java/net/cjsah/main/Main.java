@@ -1,23 +1,20 @@
 package net.cjsah.main;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
 
-        long time = 1712302697000L;
+        List<Integer> list = new ArrayList<>();
+        list.add(1);
+        list.add(2);
+        list.add(3);
+        list.add(4);
+        list.add(5);
+        list.add(1);
 
-        LocalDateTime dateTime = Instant.ofEpochMilli(time)
-                .atZone(ZoneId.of("GMT+8"))
-                .toLocalDateTime();
-
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String formattedDateTime = dateTime.format(formatter);
-
-        System.out.println(formattedDateTime);
+        System.out.println(list.subList(2,3));
 
     }
 
