@@ -62,7 +62,14 @@ public class MybatisPlus {
         configuration.setEnvironment(environment);
 //        registryMapperXml(configuration, "mapper");
         //构建sqlSessionFactory
+
+        GlobalConfig globalConfig1 = GlobalConfigUtils.getGlobalConfig(configuration);
+        
+
+
         session = builder.build(configuration);
+
+
     }
 
 
@@ -81,10 +88,10 @@ public class MybatisPlus {
      */
     private static DataSource initDataSource() {
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://:3306/test?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
+        dataSource.setJdbcUrl("jdbc:mysql://server.cjsah.net:3306/test?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&serverTimezone=GMT%2B8&autoReconnect=true");
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUsername("");
-        dataSource.setPassword("");
+        dataSource.setUsername("test");
+        dataSource.setPassword("TestPassword0.");
         dataSource.setIdleTimeout(60000);
         dataSource.setAutoCommit(true);
         dataSource.setMaximumPoolSize(20);
