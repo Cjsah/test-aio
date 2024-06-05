@@ -44,6 +44,7 @@ import org.docx4j.wml.UnderlineEnumeration;
 import javax.xml.namespace.QName;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
@@ -89,29 +90,29 @@ public class DocUtil {
     }
 
     public static P genP(boolean indent) {
-        return new P() {{
-           this.pPr = new PPr() {{
-               this.rPr = new ParaRPr() {{
-                   this.rFonts = new RFonts() {{
-                       this.hint = STHint.DEFAULT;
-                       this.ascii = "Times New Roman";
-                       this.hAnsi = "Times New Roman";
-                   }};
-                   this.vertAlign = new CTVerticalAlignRun() {{
-                       this.val = STVerticalAlignRun.BASELINE;
-                   }};
-                   this.lang = new CTLanguage() {{
-                       this.val = "en-US";
-                   }};
-               }};
-               if (indent) {
-                   this.ind = new PPrBase.Ind() {{
-                       this.firstLine = new BigInteger("420");
-                       this.firstLineChars = new BigInteger("200");
-                   }};
-               }
-           }};
-        }};
+        P p = new P();
+        p.setPPr(new PPr() {{
+            this.rPr = new ParaRPr() {{
+                this.rFonts = new RFonts() {{
+                    this.hint = STHint.DEFAULT;
+                    this.ascii = "Times New Roman";
+                    this.hAnsi = "Times New Roman";
+                }};
+                this.vertAlign = new CTVerticalAlignRun() {{
+                    this.val = STVerticalAlignRun.BASELINE;
+                }};
+                this.lang = new CTLanguage() {{
+                    this.val = "en-US";
+                }};
+            }};
+            if (indent) {
+                this.ind = new PPrBase.Ind() {{
+                    this.firstLine = new BigInteger("420");
+                    this.firstLineChars = new BigInteger("200");
+                }};
+            }
+        }});
+        return p;
     }
 
     public static void setBold(P p) {
@@ -183,6 +184,7 @@ public class DocUtil {
     private static R genImage(ParseProgress progress, String url) {
         try {
             String link = "https://ai-english.shuhai777.cn";
+            System.out.println(link + url);
             HttpRequest request = HttpRequest.get(link + url).timeout(10000);
             byte[] body = null;
             try (HttpResponse response = request.execute()) {
@@ -366,14 +368,13 @@ public class DocUtil {
             if (tds.size() > cows) cows = tds.size();
             String width = String.valueOf(7152 / tds.size());
             for (Element td : tds) {
-                Tc docTc = new Tc() {{
-                    this.tcPr = new TcPr() {{
-                        this.tcW = new TblWidth() {{
-                           this.w = new BigInteger(width);
-                           this.type = "dxa";
-                        }};
+                Tc docTc = new Tc();
+                docTc.setTcPr(new TcPr() {{
+                    this.tcW = new TblWidth() {{
+                        this.w = new BigInteger(width);
+                        this.type = "dxa";
                     }};
-                }};
+                }});
                 ParseProgress tdProgress = new ParseProgress(false);
                 parseHtmlNode(td, tdProgress, DocUtil.genRpr(false, false), bolds, italics, indent);
                 tdProgress.nodes = trim(tdProgress.nodes);
@@ -390,6 +391,7 @@ public class DocUtil {
                     }
                 });
                 docTc.getContent().addAll(tdProgress.nodes);
+                progress.afters.addAll(tdProgress.afters);
                 JAXBElement<Tc> element = genJAXBElement("tc", Tc.class, docTc);
                 docTr.getContent().add(element);
             }

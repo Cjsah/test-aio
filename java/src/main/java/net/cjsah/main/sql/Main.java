@@ -7,6 +7,7 @@ import net.cjsah.sql.MybatisPlus;
 import net.cjsah.sql.mapper.ArticleMapper;
 import net.cjsah.sql.mapper.ArticleQuestionMapper;
 import net.cjsah.sql.mapper.QuestionMapper;
+import net.cjsah.sql.mapper.StudentMapper;
 import net.cjsah.sql.pojo.Article;
 import net.cjsah.sql.pojo.ArticleQuestion;
 import net.cjsah.util.JsonUtil;
@@ -22,22 +23,22 @@ import java.util.stream.Collectors;
 @Slf4j
 public class Main {
     public static void main(String[] args) {
-//        try (SqlSession session = MybatisPlus.session.openSession(true)) {
-//            ArticleMapper mapper = session.getMapper(ArticleMapper.class);
-//
-//            log.info("读取文章列表中...");
-//            List<Article> questions = mapper.selectList(new QueryWrapper<>() {{
-//                this.eq("lexicon_id", 139);
-//            }});
-//
-//            log.info("序列化文章列表中...");
-//            String s = JsonUtil.obj2Str(questions);
-//
-//            log.info("保存文章列表中...");
-//            FileUtil.writeUtf8String(s, new File("./test.json"));
-//
-//            log.info("完成");
-//        }
+        try (SqlSession session = MybatisPlus.session.openSession(true)) {
+            StudentMapper mapper = session.getMapper(StudentMapper.class);
+
+            log.info("读取文章列表中...");
+            List<Article> questions = mapper.selectList(new QueryWrapper<>() {{
+                this.eq("lexicon_id", 139);
+            }});
+
+            log.info("序列化文章列表中...");
+            String s = JsonUtil.obj2Str(questions);
+
+            log.info("保存文章列表中...");
+            FileUtil.writeUtf8String(s, new File("./test.json"));
+
+            log.info("完成");
+        }
 
 //        File desc = new File("./test.json");
 //        File out = new File("./test1.json");

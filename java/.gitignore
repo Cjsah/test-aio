@@ -10,3 +10,5 @@ build/
 
 ### Run ###
 /run/
+
+src/main/resources/verify.json
