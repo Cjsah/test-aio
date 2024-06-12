@@ -1,7 +1,6 @@
 package net.cjsah.main;
 
 import cn.hutool.core.util.RandomUtil;
-import com.alibaba.fastjson2.JSONObject;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +16,7 @@ import java.util.stream.Collectors;
 public class Main {
     public static void main(String[] args) {
         List<WordMeaning> words = new ArrayList<>();
-        WordMeaning arg = new WordMeaning("", "");
-        arg.meanings = List.of(new TranslateOption("adv. 以前", true));
-        words.add(arg);
+        words.add(new WordMeaning("ago", "adv.以前"));
 
 
         List<String> total = new ArrayList<>();
@@ -56,22 +53,19 @@ public class Main {
 
             word.setMeanings(meanings);
         }
-        words.stream().parallel().forEach(it -> {
-            List<TranslateOption> meanings = it.getMeanings();
-            for (int i = meanings.size(); i < 8; i++) {
-                while (true) {
-                    int index = RandomUtil.randomInt(total.size());
-                    String translate = total.get(index);
-                    if (containsNot(meanings, translate)) {
-                        meanings.add(new TranslateOption(translate, false));
-                        break;
-                    }
+        words.stream().parallel().forEach(word -> {
+            List<TranslateOption> meanings = word.getMeanings();
+            List<String> translates = meanings.stream().parallel().map(it -> it.translate).toList();
+            List<String> notContains = total.stream().parallel().filter(it -> !translates.contains(it)).collect(Collectors.toList());
+            Collections.shuffle(notContains);
+            for (String translate : notContains) {
+                if (meanings.size() >= 8) {
+                    break;
                 }
+                meanings.add(new TranslateOption(translate, false));
             }
+            Collections.shuffle(meanings);
         });
-
-        words.stream().parallel().forEach(it -> Collections.shuffle(it.getMeanings()));
-
         System.out.println(words);
     }
 
@@ -82,6 +76,10 @@ public class Main {
             }
         }
         return true;
+    }
+    private static List<String> containsNot(List<String> totals, List<TranslateOption> meanings) {
+        List<String> translates = meanings.stream().parallel().map(it -> it.translate).toList();
+        return totals.stream().parallel().filter(it -> !translates.contains(it)).toList();
     }
 
     @Data
