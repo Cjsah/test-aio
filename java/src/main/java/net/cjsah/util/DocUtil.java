@@ -222,18 +222,6 @@ public class DocUtil {
         }
     }
 
-    public static List<P> parseText(String text, boolean indent) {
-        List<P> result = new ArrayList<>();
-        for (String node : text.split("\n")) {
-            node = node.trim();
-            P p = genP(indent);
-            R r = genR(node, false, false);
-            p.getContent().add(r);
-            result.add(p);
-        }
-        return result;
-    }
-
     public static ParseProgress parseHtmlNode(String text, boolean indent) {
         List<WordNode> nodes = Collections.emptyList();
         return startParse(text, nodes, nodes, indent);
