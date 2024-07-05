@@ -16,7 +16,7 @@ import java.util.List;
 public class ReadDoc {
 
     public static void main(String[] args) throws Docx4JException {
-        String path = "./result.docx";
+        String path = "./temp.docx";
 
         while (true) {
             WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path));
@@ -25,7 +25,8 @@ public class ReadDoc {
             MainDocumentPart document = wordMLPackage.getMainDocumentPart();
             new TraversalUtil(document.getContent(), finder);
 
-            System.out.println(finder.results);
+            List<Object> results = finder.results;
+            System.out.println(results);
 
             Tbl tbl = (Tbl) finder.results.get(2);
 

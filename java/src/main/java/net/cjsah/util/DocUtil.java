@@ -44,7 +44,6 @@ import org.docx4j.wml.UnderlineEnumeration;
 import javax.xml.namespace.QName;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;

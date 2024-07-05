@@ -7,6 +7,10 @@ version = '0.0.0'
 
 repositories {
     mavenCentral()
+    maven {
+        name 'Cjsah Maven'
+        url 'https://server.cjsah.net:1002/maven/'
+    }
 }
 
 dependencies {
@@ -43,6 +47,9 @@ dependencies {
 
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation 'org.apache.poi:poi:5.2.5'
+    implementation 'io.github.draco1023:poi-tl-ext:0.4.16-poi5-unofficial'
 }
 
 def asm(String name) {

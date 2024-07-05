@@ -31,7 +31,7 @@ public class WordNode {
         if (englishPronunciation == null) englishPronunciation = "";
         if (americaPronunciation == null) americaPronunciation = "";
 
-        meaning = meaning.replace("&", "&amp;").replace("<br/>", "");
+        meaning = meaning.replace("&", "&amp;").replaceAll("(<br/>|<br>)", "");
 
         return new WordNode(word, meaning, englishPronunciation, americaPronunciation, sentence);
     }
