@@ -30,7 +30,7 @@ public class Html2Word {
 
         s = FileUtil.readUtf8String(articleFile);
         JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
-        UpdateReading article = UpdateReading.fromJson(json);
+        UpdateReading article = UpdateReading.fromJson(json.getJSONObject("data"));
 
         //        String content = HtmlUtil.ofContent(title);
 
@@ -38,6 +38,7 @@ public class Html2Word {
         Configure config = Configure.builder()
                 .bind("article", htmlRenderPolicy)
                 .bind("tip", htmlRenderPolicy)
+                .bind("word", htmlRenderPolicy)
                 .build();
 
         Map<String, Object> data = new HashMap<>();
@@ -53,9 +54,9 @@ public class Html2Word {
 
         data.put("tip", HtmlUtil.ofIndent(template.getList("tip", String.class)));
 
+        data.put("word", HtmlUtil.ofWords(article.getWords()));
 
-
-
+        System.out.println(data.get("word"));
 
 //        data.put("", null);
 //        data.put("", null);
@@ -66,14 +67,14 @@ public class Html2Word {
 //        data.put("", null);
 //        data.put("article", content);
 
-//        try (
-//                XWPFTemplate template = XWPFTemplate.compile(input, config).render(data);
-//                BufferedOutputStream outputStream = FileUtil.getOutputStream(output)
-//        ) {
-//            template.write(outputStream);
-//        } catch (IOException e) {
-//            log.error("err", e);
-//        }
+        try (
+                XWPFTemplate wordTemplate = XWPFTemplate.compile(input, config).render(data);
+                BufferedOutputStream outputStream = FileUtil.getOutputStream(output)
+        ) {
+            wordTemplate.write(outputStream);
+        } catch (IOException e) {
+            log.error("err", e);
+        }
 
     }
 
