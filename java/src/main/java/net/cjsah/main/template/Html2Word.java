@@ -22,13 +22,9 @@ public class Html2Word {
     public static void main(String[] args) throws IOException {
         File input = new File("./study-template.docx");
         File output = new File("./result.docx");
-        File templateFile = new File("./template.json");
         File articleFile = new File("./article.json");
 
-        String s = FileUtil.readUtf8String(templateFile);
-        JSONObject template = JsonUtil.str2Obj(s, JSONObject.class);
-
-        s = FileUtil.readUtf8String(articleFile);
+        String s = FileUtil.readUtf8String(articleFile);
         JSONObject json = JsonUtil.str2Obj(s, JSONObject.class);
         UpdateReading article = UpdateReading.fromJson(json.getJSONObject("data"));
 
@@ -36,9 +32,10 @@ public class Html2Word {
 
         HtmlRenderPolicy htmlRenderPolicy = new HtmlRenderPolicy();
         Configure config = Configure.builder()
-                .bind("article", htmlRenderPolicy)
                 .bind("tip", htmlRenderPolicy)
                 .bind("word", htmlRenderPolicy)
+                .bind("article", htmlRenderPolicy)
+                .bind("answer", htmlRenderPolicy)
                 .build();
 
         Map<String, Object> data = new HashMap<>();
@@ -52,11 +49,11 @@ public class Html2Word {
         data.put("vocabulary", 20);
         data.put("count", 30);
 
-        data.put("tip", HtmlUtil.ofIndent(template.getList("tip", String.class)));
-
+        data.put("tip", HtmlUtil.ofTip());
         data.put("word", HtmlUtil.ofWords(article.getWords()));
+        data.put("article", HtmlUtil.ofArticle(article.getArticles(), article.getWords(), article.getOverWords()));
+        data.put("answer", HtmlUtil.ofAnswer(article.getArticles()));
 
-        System.out.println(data.get("word"));
 
 //        data.put("", null);
 //        data.put("", null);
@@ -67,11 +64,14 @@ public class Html2Word {
 //        data.put("", null);
 //        data.put("article", content);
 
+        long start = System.currentTimeMillis();
         try (
                 XWPFTemplate wordTemplate = XWPFTemplate.compile(input, config).render(data);
                 BufferedOutputStream outputStream = FileUtil.getOutputStream(output)
         ) {
             wordTemplate.write(outputStream);
+            long end = System.currentTimeMillis();
+            System.out.println(end - start);
         } catch (IOException e) {
             log.error("err", e);
         }
