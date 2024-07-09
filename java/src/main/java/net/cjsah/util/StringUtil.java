@@ -114,4 +114,7 @@ public class StringUtil {
         return Arrays.stream(patterns).anyMatch(value::startsWith);
     }
 
+    public static boolean isLetter(int unicode) {
+        return (unicode >= 'a' && unicode <= 'z') || (unicode >= 'A' && unicode <= 'Z');
+    }
 }

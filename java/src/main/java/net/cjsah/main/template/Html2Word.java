@@ -6,14 +6,19 @@ import com.deepoove.poi.XWPFTemplate;
 import com.deepoove.poi.config.Configure;
 import lombok.extern.slf4j.Slf4j;
 import net.cjsah.data.UpdateReading;
+import net.cjsah.data.WordNode;
+import net.cjsah.main.resolver.AIEnglishImageRenderer;
 import net.cjsah.util.HtmlUtil;
 import net.cjsah.util.JsonUtil;
+import net.cjsah.util.StreamUtil;
+import org.ddr.poi.html.HtmlRenderConfig;
 import org.ddr.poi.html.HtmlRenderPolicy;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -30,7 +35,9 @@ public class Html2Word {
 
         //        String content = HtmlUtil.ofContent(title);
 
-        HtmlRenderPolicy htmlRenderPolicy = new HtmlRenderPolicy();
+        HtmlRenderConfig renderConfig = new HtmlRenderConfig();
+        renderConfig.setCustomRenderers(List.of(new AIEnglishImageRenderer()));
+        HtmlRenderPolicy htmlRenderPolicy = new HtmlRenderPolicy(renderConfig);
         Configure config = Configure.builder()
                 .bind("tip", htmlRenderPolicy)
                 .bind("word", htmlRenderPolicy)
@@ -51,18 +58,8 @@ public class Html2Word {
 
         data.put("tip", HtmlUtil.ofTip());
         data.put("word", HtmlUtil.ofWords(article.getWords()));
-        data.put("article", HtmlUtil.ofArticle(article.getArticles(), article.getWords(), article.getOverWords()));
+        data.put("article", HtmlUtil.ofArticle(article.getArticles(), StreamUtil.map(article.getWords(), WordNode::getWord), article.getOverWords()));
         data.put("answer", HtmlUtil.ofAnswer(article.getArticles()));
-
-
-//        data.put("", null);
-//        data.put("", null);
-//        data.put("", null);
-//        data.put("", null);
-//        data.put("", null);
-//        data.put("", null);
-//        data.put("", null);
-//        data.put("article", content);
 
         long start = System.currentTimeMillis();
         try (

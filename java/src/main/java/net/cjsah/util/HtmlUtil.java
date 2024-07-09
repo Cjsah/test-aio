@@ -1,11 +1,11 @@
 package net.cjsah.util;
 
+import lombok.Data;
 import net.cjsah.data.Article;
 import net.cjsah.data.SubQuestion;
 import net.cjsah.data.WordNode;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -51,15 +51,12 @@ public class HtmlUtil {
             builder.append("</b>&nbsp;");
             builder.append(word.getEnglishPronunciation());
             builder.append("</p>");
-            Arrays.stream(word.getMeaning().split("(<br/>|\\n)"))
-                    .filter(meaning -> !meaning.trim().isEmpty() && !meaning.startsWith("*"))
-                    .peek(spells::add)
-                    .forEach(meaning -> {
-                        // <span style="display:block;text-indent: 24px">${translate}</span>
-                        builder.append("<p style=\"display:block;text-indent: 24px\">");
-                        builder.append(meaning);
-                        builder.append("</p>");
-                    });
+            spells.addAll(word.getMeanings());
+            for (String meaning : word.getMeanings()) {
+                builder.append("<p style=\"display:block;text-indent: 24px\">");
+                builder.append(meaning);
+                builder.append("</p>");
+            }
         }
         if (spells.isEmpty()) return html(builder.toString());
         subTitle(builder, "单词速记");
@@ -83,7 +80,7 @@ public class HtmlUtil {
         return html(builder.toString());
     }
 
-    public static String ofArticle(List<Article> articles, List<WordNode> words, List<WordNode> overWords) {
+    public static String ofArticle(List<Article> articles, List<String> words, List<WordNode> overWords) {
         if (articles.isEmpty()) return "";
         StringBuilder builder = new StringBuilder();
         subTitle(builder, "智能阅读训练");
@@ -93,11 +90,11 @@ public class HtmlUtil {
         addTip(builder, "流利性阅读训练的目的是提高英语语感，所以切勿为了做题而做题。需要逐字逐句的搞懂文章的意思。");
         addTip(builder, "阅读速度是很重要的学习指标，请在理解词句的基础上尽量提高阅读速度。");
         addTip(builder, "☆阅读计时从此处开始，请按顺序完成阅读，并注意记录时间。", false);
-        for (int i = 0; i < articles.size(); i++) {
-            Article article = articles.get(i);
+        for (int articleIndex = 0; articleIndex < articles.size(); articleIndex++) {
+            Article article = articles.get(articleIndex);
             // <p><b>Passage ${index}</b> 编号:${id}, 字数:${wordCount}, 阅读开始时间：_____点_____分</p>
             builder.append("<p><b style=\"font-size:16px;\">Passage ");
-            builder.append(i + 1);
+            builder.append(articleIndex + 1);
             builder.append("</b> 编号:");
             builder.append(article.getId());
             builder.append(", 字数:");
@@ -105,19 +102,36 @@ public class HtmlUtil {
             builder.append(", 阅读开始时间：_____点_____分");
             builder.append("<table style=\"margin-left:6px;\"><tr><td style=\"width:160%\">");
             //content
-            builder.append(article.getTitle());
+            ParseResult parseResult = resolvePassage(article.getTitle(), words, overWords);
+            builder.append(parseResult.passage);
             builder.append("<br/>");
             for (SubQuestion question : article.getQuestions()) {
                 builder.append(question.getTitle());
-                builder.append("<br/>");
                 if (addOptionCheckFail(builder, 'A', question.getOptionA())) break;
                 if (addOptionCheckFail(builder, 'B', question.getOptionB())) break;
                 if (addOptionCheckFail(builder, 'C', question.getOptionC())) break;
                 if (addOptionCheckFail(builder, 'D', question.getOptionD())) break;
+                builder.append("<br/>");
             }
             builder.append("</td><td>");
             // sider word
-            builder.append("sider");
+            for (int wordIndex = 0; wordIndex < parseResult.words.size(); wordIndex++) {
+                WordNode word = parseResult.words.get(wordIndex);
+                builder.append("<p style=\"margin-top:8px;\">");
+                builder.append(wordIndex + 1);
+                builder.append(".&nbsp;");
+                builder.append(word.getWord());
+                builder.append("&nbsp;");
+                builder.append(word.getEnglishPronunciation());
+                builder.append("</p>");
+                if (word.getMeanings().isEmpty()) continue;
+                builder.append("<p>");
+                for (String meaning : word.getMeanings()) {
+                    builder.append(meaning);
+                    builder.append("&nbsp;");
+                }
+                builder.append("</p>");
+            }
             builder.append("</td></tr></table><br/>");
         }
         return html(builder.toString());
@@ -177,8 +191,66 @@ public class HtmlUtil {
         builder.append(option);
         builder.append(". ");
         builder.append(text);
-        builder.append("<br/>");
         return false;
+    }
+
+    public static ParseResult resolvePassage(String passage, List<String> studyWords, List<WordNode> overWords) {
+        List<WordNode> nodes = new ArrayList<>();
+        StringBuilder builder = new StringBuilder();
+        StringBuilder wordBuilder = new StringBuilder();
+        boolean append = true;
+        for (int i = 0; i < passage.length(); i++) {
+            int c = passage.codePointAt(i);
+            if (StringUtil.isLetter(c)) {
+                if (append) {
+                    wordBuilder.appendCodePoint(c);
+                } else {
+                    builder.appendCodePoint(c);
+                }
+            } else {
+                if (wordBuilder.length() > 0) {
+                    String word = wordBuilder.toString();
+                    wordBuilder.setLength(0);
+                    WordNode node;
+                    if (studyWords.contains(word)) {
+                        builder.append("<b>");
+                        builder.append(word);
+                        builder.append("</b>");
+                    } else if ((node = StreamUtil.find(overWords, it -> word.equals(it.getWord()))) != null){
+                        builder.append("<i>");
+                        builder.append(word);
+                        builder.append("</i>");
+                        int num = nodes.indexOf(node);
+                        if (num == -1) {
+                            num = nodes.size();
+                            nodes.add(node);
+                        }
+                        builder.append("<sup>[");
+                        builder.append(num + 1);
+                        builder.append("]</sup>");
+                    } else {
+                        builder.append(word);
+                    }
+                }
+                builder.appendCodePoint(c);
+                switch (c) {
+                    case '<':
+                        append = false;
+                        break;
+                    case '>':
+                        append = true;
+                        break;
+                }
+            }
+
+        }
+        return new ParseResult(builder.toString(), nodes);
+    }
+
+    @Data
+    public static final class ParseResult {
+        private final String passage;
+        private final List<WordNode> words;
     }
 
 }

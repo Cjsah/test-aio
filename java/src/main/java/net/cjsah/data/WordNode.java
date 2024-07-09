@@ -1,23 +1,35 @@
 package net.cjsah.data;
 
 import com.alibaba.fastjson2.JSONObject;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import net.cjsah.util.JsonUtil;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
-@AllArgsConstructor
 public class WordNode {
     private final String word;
     private final String meaning;
     private final String englishPronunciation;
     private final String americaPronunciation;
     private final List<Sentence> sentence;
+    private final List<String> meanings;
 
     public WordNode(String word) {
         this(word, "", "", "", null);
+    }
+
+    public WordNode(String word, String meaning, String englishPronunciation, String americaPronunciation, List<Sentence> sentence) {
+        this.word = word;
+        this.meaning = meaning;
+        this.englishPronunciation = englishPronunciation;
+        this.americaPronunciation = americaPronunciation;
+        this.sentence = sentence;
+        this.meanings = Arrays.stream(meaning.split("(<br/>|\\n)"))
+                .filter(it -> !it.trim().isEmpty() && !it.startsWith("*"))
+                .collect(Collectors.toList());
     }
 
     public static WordNode fromJson(JSONObject json) {
