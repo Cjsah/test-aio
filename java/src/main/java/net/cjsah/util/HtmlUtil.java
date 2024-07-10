@@ -107,6 +107,7 @@ public class HtmlUtil {
             builder.append("<br/>");
             for (SubQuestion question : article.getQuestions()) {
                 builder.append(question.getTitle());
+                builder.append("<br/>");
                 if (addOptionCheckFail(builder, 'A', question.getOptionA())) break;
                 if (addOptionCheckFail(builder, 'B', question.getOptionB())) break;
                 if (addOptionCheckFail(builder, 'C', question.getOptionC())) break;
@@ -191,6 +192,7 @@ public class HtmlUtil {
         builder.append(option);
         builder.append(". ");
         builder.append(text);
+        builder.append("<br/>");
         return false;
     }
 
