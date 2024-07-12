@@ -100,21 +100,21 @@ public class HtmlUtil {
             builder.append(", 字数:");
             builder.append(article.getWordCount());
             builder.append(", 阅读开始时间：_____点_____分");
-            builder.append("<table style=\"margin-left:6px;\"><tr><td style=\"width:160%\">");
+            builder.append("<table style=\"margin-left:6px;line-height:40px;\"><tr><td style=\"width:160%\">");
             //content
             ParseResult parseResult = resolvePassage(article.getTitle(), words, overWords);
             builder.append(parseResult.passage);
             builder.append("<br/>");
             for (SubQuestion question : article.getQuestions()) {
+                builder.append("<br/>");
                 builder.append(question.getTitle());
                 builder.append("<br/>");
-                if (addOptionCheckFail(builder, 'A', question.getOptionA())) break;
-                if (addOptionCheckFail(builder, 'B', question.getOptionB())) break;
-                if (addOptionCheckFail(builder, 'C', question.getOptionC())) break;
-                if (addOptionCheckFail(builder, 'D', question.getOptionD())) break;
-                builder.append("<br/>");
+                if (addOptionCheckFail(builder, 'A', question.getOptionA())) continue;
+                if (addOptionCheckFail(builder, 'B', question.getOptionB())) continue;
+                if (addOptionCheckFail(builder, 'C', question.getOptionC())) continue;
+                addOptionCheckFail(builder, 'D', question.getOptionD());
             }
-            builder.append("</td><td>");
+            builder.append("<br/></td><td>");
             // sider word
             for (int wordIndex = 0; wordIndex < parseResult.words.size(); wordIndex++) {
                 WordNode word = parseResult.words.get(wordIndex);
