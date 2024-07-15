@@ -38,7 +38,7 @@ public class Html2WordTest {
 
 
         Map<String, Object> data = new HashMap<>();
-        data.put("article", HtmlUtil.html(html));
+        data.put("article", html);
 
         try (
                 XWPFTemplate wordTemplate = XWPFTemplate.compile(input, config).render(data);

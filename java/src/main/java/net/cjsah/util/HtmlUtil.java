@@ -20,19 +20,14 @@ import java.util.List;
  */
 public class HtmlUtil {
 
-    public static String html(String content) {
-        return "<html><body>" + content + "</body></html>";
-    }
-
     public static String indent(String content) {
         return "<p style=\"text-indent: 24px;\">" + content + "</p>";
     }
 
     public static String ofTip() {
-        String builder = indent("请逐字逐句翻译，确保看懂每一句话，看懂文章再做题，不要为了做题而读文章，不要跳略读，不要先看题再看文章。") +
+        return indent("请逐字逐句翻译，确保看懂每一句话，看懂文章再做题，不要为了做题而读文章，不要跳略读，不要先看题再看文章。") +
                 indent("我们的目标是在高于80%正确率的前提下，阅读文章每分钟在80个单词以上。") +
                 indent("经过刻意学习后，你一定能实现这个目标。当目标达成时，英语学习对于你来说轻松无比，拿高分顺理成章。");
-        return html(builder);
     }
 
 
@@ -46,9 +41,9 @@ public class HtmlUtil {
             // <span><span>${index}.</span> <b>${word}</b> ${pronunciation}</span><br/>
             builder.append("<p><span style=\"color:#595959;\">");
             builder.append(i + 1);
-            builder.append(".</span>&nbsp;<b>");
+            builder.append(".</span> <b>");
             builder.append(word.getWord());
-            builder.append("</b>&nbsp;");
+            builder.append("</b> ");
             builder.append(word.getEnglishPronunciation());
             builder.append("</p>");
             spells.addAll(word.getMeanings());
@@ -58,7 +53,7 @@ public class HtmlUtil {
                 builder.append("</p>");
             }
         }
-        if (spells.isEmpty()) return html(builder.toString());
+        if (spells.isEmpty()) return builder.toString();
         subTitle(builder, "单词速记");
         addTip(builder, "请在今天学习的单词列表中找到对应单词，写在横线上，边抄边读，可以默写，默写后在单词列表中找到并核对，书写时保持工整。");
         int count = 0;
@@ -68,7 +63,7 @@ public class HtmlUtil {
             for (String translate : spells) {
                 builder.append("<p style=\"text-align:right;margin:12px 0;\">");
                 builder.append(translate);
-                builder.append("&nbsp;");
+                builder.appendCodePoint(160);
                 builder.append(++count);
                 builder.append(".__________");
                 builder.append("</p>");
@@ -77,7 +72,7 @@ public class HtmlUtil {
                 }
             }
         }
-        return html(builder.toString());
+        return builder.toString();
     }
 
     public static String ofArticle(List<Article> articles, List<String> words, List<WordNode> overWords) {
@@ -100,7 +95,7 @@ public class HtmlUtil {
             builder.append(", 字数:");
             builder.append(article.getWordCount());
             builder.append(", 阅读开始时间：_____点_____分");
-            builder.append("<table style=\"margin-left:6px;line-height:40px;\"><tr><td style=\"width:160%\">");
+            builder.append("<table style=\"margin-left:6px;\"><tr><td style=\"width:160%\">");
             //content
             ParseResult parseResult = resolvePassage(article.getTitle(), words, overWords);
             builder.append(parseResult.passage);
@@ -118,24 +113,24 @@ public class HtmlUtil {
             // sider word
             for (int wordIndex = 0; wordIndex < parseResult.words.size(); wordIndex++) {
                 WordNode word = parseResult.words.get(wordIndex);
-                builder.append("<p style=\"margin-top:8px;\">");
+                builder.append("<br/><p>");
                 builder.append(wordIndex + 1);
-                builder.append(".&nbsp;");
+                builder.append(". ");
                 builder.append(word.getWord());
-                builder.append("&nbsp;");
+                builder.appendCodePoint(160);
                 builder.append(word.getEnglishPronunciation());
                 builder.append("</p>");
                 if (word.getMeanings().isEmpty()) continue;
                 builder.append("<p>");
                 for (String meaning : word.getMeanings()) {
                     builder.append(meaning);
-                    builder.append("&nbsp;");
+                    builder.appendCodePoint(160);
                 }
-                builder.append("</p>");
+                builder.append("</p><br/>");
             }
             builder.append("</td></tr></table><br/>");
         }
-        return html(builder.toString());
+        return builder.toString();
     }
 
     public static String ofAnswer(List<Article> articles) {
@@ -166,7 +161,7 @@ public class HtmlUtil {
 //            builder.append(article.getParse());
 //            builder.append("</p>");
 //        }
-        return html(builder.toString());
+        return builder.toString();
     }
 
     private static void addTip(StringBuilder builder, String tip) {
@@ -234,7 +229,7 @@ public class HtmlUtil {
                         builder.append(word);
                     }
                 }
-                builder.appendCodePoint(c);
+                builder.appendCodePoint(append && c == ' ' ? 160 : c);
                 switch (c) {
                     case '<':
                         append = false;
