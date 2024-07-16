@@ -99,6 +99,8 @@ public class HtmlUtil {
             //content
             ParseResult parseResult = resolvePassage(article.getTitle(), words, overWords);
             builder.append(parseResult.passage);
+            System.out.println(article.getId());
+            System.out.println(parseResult.passage);
             builder.append("<br/>");
             for (SubQuestion question : article.getQuestions()) {
                 builder.append("<br/>");
