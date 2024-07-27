@@ -41,6 +41,8 @@ dependencies {
     implementation 'com.baomidou:mybatis-plus:3.5.5'
     implementation 'com.baomidou:mybatis-plus-extension:3.5.5'
 
+    implementation 'org.quartz-scheduler:quartz:2.3.2'
+
     compileOnly "org.projectlombok:lombok:${lombok_version}"
     testCompileOnly "org.projectlombok:lombok:${lombok_version}"
     annotationProcessor "org.projectlombok:lombok:${lombok_version}"
