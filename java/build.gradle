@@ -11,6 +11,9 @@ repositories {
         name 'Cjsah Maven'
         url 'https://server.cjsah.net:1002/maven/'
     }
+    maven {
+        url 'https://releases.aspose.com/java/repo/'
+    }
 }
 
 dependencies {
@@ -42,6 +45,8 @@ dependencies {
     implementation 'com.baomidou:mybatis-plus-extension:3.5.5'
 
     implementation 'org.quartz-scheduler:quartz:2.3.2'
+
+    implementation 'com.aspose:aspose-words:24.7:jdk17'
 
     compileOnly "org.projectlombok:lombok:${lombok_version}"
     testCompileOnly "org.projectlombok:lombok:${lombok_version}"
