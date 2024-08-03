@@ -47,6 +47,8 @@ dependencies {
     implementation 'org.quartz-scheduler:quartz:2.3.2'
 
     implementation 'com.aspose:aspose-words:24.7:jdk17'
+    implementation 'org.javassist:javassist:3.30.2-GA'
+    implementation fileTree(dir: 'libs', includes: ['*.jar'])
 
     compileOnly "org.projectlombok:lombok:${lombok_version}"
     testCompileOnly "org.projectlombok:lombok:${lombok_version}"
