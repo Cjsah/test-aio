@@ -28,6 +28,9 @@ public class JsonUtil {
         return JSON.parseObject(json, new TypeReference<T>() {
         });
     }
+    public static JSONObject str2Json(String json) {
+        return JSON.parseObject(json);
+    }
 
     public static <T> T str2ObjGson(String json, Class<T> clazz) {
         return GSON.fromJson(json, clazz);
