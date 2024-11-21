@@ -8,12 +8,10 @@ import java.io.Serial;
 import java.io.Serializable;
 
 @Data
-@TableName("lexicon_article_question")
-public class ArticleQuestion implements Serializable {
+@TableName("temp")
+public class TempNode implements Serializable {
     @Serial
     private static final long serialVersionUID = 0L;
     @TableId
     private Long id;
-    private Integer articleLevel;
-
 }

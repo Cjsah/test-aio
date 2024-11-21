@@ -13,7 +13,7 @@ public class RequestUtil {
     public static <T> T post(String url, Map<String, String> header, Map<String, Object> params, String body, String contentType, Class<T> resultType) {
         HttpRequest request = HttpRequest.post(url)
                 .header("Content-Type", contentType)
-                .timeout(5000);
+                .timeout(60000);
         if (null != header) request.headerMap(header, false);
         if (null != params) request.form(params);
         if (null != body) request.body(body);
