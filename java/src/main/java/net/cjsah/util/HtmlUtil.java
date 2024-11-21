@@ -95,12 +95,10 @@ public class HtmlUtil {
             builder.append(", 字数:");
             builder.append(article.getWordCount());
             builder.append(", 阅读开始时间：_____点_____分");
-            builder.append("<table style=\"margin-left:6px;\"><tr><td style=\"width:160%\">");
+            builder.append("<table style=\"margin-left:6px;\"><tr><td style=\"width:160%;font-size:16px;line-height:2em;\">");
             //content
             ParseResult parseResult = resolvePassage(article.getTitle(), words, overWords);
             builder.append(parseResult.passage);
-            System.out.println(article.getId());
-            System.out.println(parseResult.passage);
             builder.append("<br/>");
             for (SubQuestion question : article.getQuestions()) {
                 builder.append("<br/>");
@@ -218,13 +216,12 @@ public class HtmlUtil {
                     } else if ((node = StreamUtil.find(overWords, it -> word.equals(it.getWord()))) != null){
                         builder.append("<i>");
                         builder.append(word);
-                        builder.append("</i>");
+                        builder.append("</i><sup>[");
                         int num = nodes.indexOf(node);
                         if (num == -1) {
                             num = nodes.size();
                             nodes.add(node);
                         }
-                        builder.append("<sup>[");
                         builder.append(num + 1);
                         builder.append("]</sup>");
                     } else {
@@ -242,6 +239,9 @@ public class HtmlUtil {
                 }
             }
 
+        }
+        if (wordBuilder.length() > 0) {
+            builder.append(wordBuilder);
         }
         return new ParseResult(builder.toString(), nodes);
     }

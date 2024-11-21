@@ -16,7 +16,7 @@ import java.util.List;
 public class ReadDoc {
 
     public static void main(String[] args) throws Docx4JException {
-        String path = "./temp.docx";
+        String path = "./result.docx";
 
         while (true) {
             WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.load(new File(path));
@@ -28,13 +28,13 @@ public class ReadDoc {
             List<Object> results = finder.results;
             System.out.println(results);
 
-            Tbl tbl = (Tbl) finder.results.get(2);
+            Tbl tbl = (Tbl) finder.results.get(0);
 
             P line1 = getContent(tbl, 0);
-            P line2 = getContent(tbl, 1);
+//            P line2 = getContent(tbl, 1);
 
             System.out.println(line1);
-            System.out.println(line2);
+//            System.out.println(line2);
 
         }
     }
