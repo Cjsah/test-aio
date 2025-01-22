@@ -8,8 +8,8 @@ version = '0.0.0'
 repositories {
     mavenCentral()
     maven {
-        name 'Cjsah Maven'
-        url 'https://server.cjsah.net:1002/maven/'
+        name 'Shuhai777 Maven'
+        url 'https://resource.shuhai777.cn/maven/'
     }
     maven {
         url 'https://releases.aspose.com/java/repo/'
@@ -62,7 +62,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
     implementation 'org.apache.poi:poi:5.2.5'
-    implementation 'io.github.draco1023:poi-tl-ext:1.0.2-unofficial'
+    implementation 'io.github.draco1023:poi-tl-ext:1.0.5-unofficial'
     implementation 'org.jsoup:jsoup:1.15.3'
 }
 

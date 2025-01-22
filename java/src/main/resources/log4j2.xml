@@ -19,6 +19,14 @@
       <AppenderRef ref="Console"/>
       <AppenderRef ref="File"/>
     </logger>
+    <logger name="org.ddr.poi" level="warn">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="File"/>
+    </logger>
+    <logger name="com.deepoove.poi" level="warn">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="File"/>
+    </logger>
     <Root level="debug">
       <AppenderRef ref="Console"/>
       <AppenderRef ref="File"/>

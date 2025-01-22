@@ -99,8 +99,6 @@ public class HtmlUtil {
             //content
             ParseResult parseResult = resolvePassage(article.getTitle(), words, overWords);
             builder.append(parseResult.passage);
-            System.out.println(article.getId());
-            System.out.println(parseResult.passage);
             builder.append("<br/>");
             for (SubQuestion question : article.getQuestions()) {
                 builder.append("<br/>");
@@ -142,13 +140,13 @@ public class HtmlUtil {
         for (int i = 0; i < articles.size(); i++) {
             Article article = articles.get(i);
             // <p><b>Passage ${index}</b></p>
-            builder.append("<p><b style=\"font-size:16px;\">Passage ");
+            builder.append("<div><p><b style=\"font-size:16px;\">Passage ");
             builder.append(i + 1);
             builder.append("</b></p><p>");
             builder.append(article.getAnswer());
             builder.append("</p><p>");
             builder.append(article.getParse());
-            builder.append("</p>");
+            builder.append("</p></div>");
         }
         // TODO 暂时留空
 //        subTitle(builder, "全文翻译");
