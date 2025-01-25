@@ -73,9 +73,6 @@ public class Html2Word {
         data.put("word", HtmlUtil.ofWords(article.getWords()));
         data.put("article", HtmlUtil.ofArticle(article.getArticles(), StreamUtil.map(article.getWords(), WordNode::getWord), article.getOverWords()));
         data.put("answer", HtmlUtil.ofAnswer(article.getArticles()).replace("\r", "\n"));
-        System.out.println("===");
-        System.out.println(HtmlUtil.ofAnswer(article.getArticles()).replace("\r", "\n"));
-        System.out.println("===");
         data.put("twords", article.getMiddleWords().getWords());
         data.put("tcontent", Includes.ofLocal("test.docx").setRenderModel(data).create());
         long start = System.currentTimeMillis();
